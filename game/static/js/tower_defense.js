@@ -450,11 +450,17 @@ function drawEnemies() {
     for (const e of state.enemies) {
         const img = e.sprite ? SPRITES[e.sprite] : null;
         if (img && img.complete && img.naturalWidth > 0) {
-            // 用图片渲染
             const sz = e.size * 2.5;
-            ctx.drawImage(img, e.x - sz / 2, e.y - sz / 2, sz, sz);
+            ctx.save();
+            if (e.flipX) {
+                ctx.translate(e.x, e.y);
+                ctx.scale(-1, 1);
+                ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
+            } else {
+                ctx.drawImage(img, e.x - sz / 2, e.y - sz / 2, sz, sz);
+            }
+            ctx.restore();
         } else {
-            // 几何图形 fallback
             ctx.beginPath();
             ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
             ctx.fillStyle = e.color;
@@ -578,11 +584,11 @@ function gameLoop(timestamp) {
    ============================================================ */
 
 const ENEMY_CONFIGS = [
-    { key: 'grunt',   name: '普通学生', hp: 30,  speed: 60,  value: 10, damage: 1, size: 10, color: '#fbbf24', sprite: null,                        appearWave: 1, ratio: 5 },
-    { key: 'runner',  name: '应援团',   hp: 22,  speed: 110, value: 15, damage: 1, size: 8,  color: '#38bdf8', sprite: 'images/1096_1.png',           appearWave: 2, ratio: 3 },
-    { key: 'tank',    name: '风纪委员', hp: 130, speed: 40,  value: 30, damage: 3, size: 14, color: '#ef4444', sprite: 'images/C_3.png',              appearWave: 4, ratio: 2 },
-    { key: 'elite',   name: '学生会干部', hp: 80, speed: 50, value: 50, damage: 2, size: 12, color: '#a855f7', sprite: 'images/Kyon_1.png',        appearWave: 6, ratio: 1 },
-    { key: 'boss',    name: '凉宫春日', hp: 350, speed: 35, value: 100, damage: 5, size: 20, color: '#ec4899', sprite: 'images/haruhi_1.png',         appearWave: 5, ratio: 0 },
+    { key: 'grunt',   name: '阿虚',     hp: 30,  speed: 60,  value: 10, damage: 1, size: 10, color: '#fbbf24', sprite: 'images/kyon.png',      flipX: true,  appearWave: 1, ratio: 5 },
+    { key: 'runner',  name: '1096',     hp: 22,  speed: 110, value: 15, damage: 1, size: 8,  color: '#38bdf8', sprite: 'images/1096_1.png',    flipX: true,  appearWave: 2, ratio: 3 },
+    { key: 'tank',    name: '古泉',     hp: 130, speed: 40,  value: 30, damage: 3, size: 14, color: '#ef4444', sprite: 'images/Koizumi.png',   flipX: true,  appearWave: 4, ratio: 2 },
+    { key: 'elite',   name: '有希',     hp: 80, speed: 50,  value: 50, damage: 2, size: 12, color: '#a855f7', sprite: 'images/yuki.png',       flipX: false, appearWave: 6, ratio: 1 },
+    { key: 'boss',    name: '凉宫春日', hp: 350, speed: 35, value: 100, damage: 5, size: 20, color: '#ec4899', sprite: 'images/haruhi.png',    flipX: false, appearWave: 5, ratio: 0 },
 ];
 
 function createEnemy(configIndex, waveNum) {
@@ -601,6 +607,7 @@ function createEnemy(configIndex, waveNum) {
         size: cfg.size,
         color: cfg.color,
         sprite: cfg.sprite,
+        flipX: cfg.flipX || false,
     };
 }
 
