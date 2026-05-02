@@ -1,54 +1,170 @@
 const scenes = [
   {
-    title: 'A New Threat',
-    text: 'The city is under siege by strange mechanical creatures. Our heroes must defend the core.',
+    title: '教室内部·午后',
+    text: `键盘敲击声在狭窄的教室里此起彼伏，凉风扇有气无力地转着，吹得桌上的光盘盒微微晃动。我们四个正埋首赶着手头的程序，社长坐在最里面的位置，手指在键盘上翻飞，偶尔皱下眉，大概是又遇到了bug。`,
   },
   {
-    title: 'Gathering Allies',
-    text: 'They search for allies, build towers, and learn the secrets of the enemy.',
+    title: '突如其来的打断',
+    text: `"喀啦——"教室门被猛地推开，打断了所有的节奏。`,
   },
   {
-    title: 'Battle Begins',
-    text: 'The first wave approaches! Prepare your defenses and hold the line.',
+    title: '谁来了？',
+    text: `(社长)【皱眉抬头】谁啊？没敲门就进来了。
+(社员A)【侧过头】喂喂，那女生是谁啊？穿得挺显眼的，旁边还跟着两个……一个一脸无奈，一个看起来快哭了？
+(社员B)【推了推眼镜】不认识，不是我们年级的吧？看那样子，来者不善啊。`,
+  },
+  {
+    title: '宣称征收电脑',
+    text: `女生径直走到教室中央，双手叉腰，下巴微抬，笑容里带着毫不掩饰的傲慢，声音清亮得能盖过风扇声："你们好！我前来征收一台电脑！"`,
+  },
+  {
+    title: '强硬拒绝',
+    text: `(社长)【站起身，语气不耐】你这家伙在胡说什么？我们社团的电脑都是社员自己存钱买的，学校经费根本不够，不可能给你。
+(社员C)【小声嘀咕】征收？以为自己是谁啊……太没礼貌了吧。`,
+  },
+  {
+    title: '她的傲气',
+    text: `女生歪了歪头，一脸无所谓："有什么关系嘛！一台就好啦，你们明明就有这么多台！"`,
+  },
+  {
+    title: '身份揭晓',
+    text: `(社长)【脸色沉了下来】先不说给不给，你们到底是谁？哪个社团的？
+"我是SOS团团长，凉宫春日。"女生抬了抬下巴，指了指身边的两人，"这两个分别是部下一跟部下二。"`,
+  },
+  {
+    title: '中二气场',
+    text: `(社员A)【憋笑】部下？这女生也太中二了吧……
+(社长)【皱眉呵斥】不管什么SOS团，电脑不可能给你们，要的话自己去买！`,
+  },
+  {
+    title: '她的威胁',
+    text: `凉宫春日的眼神突然亮了起来，那是一种让人心里发毛的、无所畏惧的光。我们还没反应过来，她就一把将身边那个穿女仆装的女生往前推了推，径直抓住我的手，往那个女生的胸部按了过去。`,
+  },
+  {
+    title: '惊叫与拍照',
+    text: `"哇啊——！"女仆装女生的尖叫声刺破耳膜。
+"啊？！你干什么！"我浑身一僵，下意识地想抽手，却被她死死按住。
+喀擦！清脆的快门声响起，凉宫春日冲那个一脸无奈的男生喊："阿虚，再拍一张！"`,
+  },
+  {
+    title: '反抗与恐惧',
+    text: `(社员B)【惊得站起来】喂！你到底在搞什么啊？！快放开社长！
+(社员C)【手足无措】完、完了，这要是被别人看到……
+我拼命挣扎，脸颊烫得能烧起来，脑子里一片空白——我这是被陷害了？！`,
+  },
+  {
+    title: '更离谱的勒索',
+    text: `凉宫春日却笑得一脸得意，甚至还想拉着我的手去掀那个女仆装女生的裙子。
+"妳到底要干嘛啦！"我终于挣脱她的手，后退一步，胸口剧烈起伏着。`,
+  },
+  {
+    title: '威胁曝光',
+    text: `凉宫春日优雅地摇了摇手指，语气带着威胁："唉呀呀！我们可是拍到你性骚扰我们社员的画面啰！要是不想让这张照片在校内流传的话，就快点交出电脑！"`,
+  },
+  {
+    title: '无辜的解释',
+    text: `(社长)【气得发抖】开什么玩笑！是妳强拉着我去摸的！我是无辜的！
+(社员A)【连忙附和】对！我们都可以作证！社长根本不是故意的！`,
+  },
+  {
+    title: '绝望与无力',
+    text: `我们三个连忙点头，恨不得把心掏出来证明社长的清白。可凉宫春日只是瞥了我们一眼，满不在乎地说："是吗？你可以试试看，有谁会听你的解释啊！"`,
+  },
+  {
+    title: '更可怕的诬陷',
+    text: `我看着她手里的相机，心脏一点点沉下去——是啊，这种照片，一旦流传出去，就算有一百张嘴也说不清楚。
+就在我进退两难的时候，凉宫春日又抛出了更离谱的话："好，那我就说你们全体社员轮暴朝比奈！"`,
+  },
+  {
+    title: '无法反驳',
+    text: `(社员B)【脸色瞬间惨白】什、什么？！太过分了吧！我们根本没做啊！
+(社员C)【声音发颤】学、学校要是知道了，我们社团就完了……`,
+  },
+  {
+    title: '无力的让步',
+    text: `我看着那个叫朝比奈的女仆装女生瘫在地上，肩膀不停发抖，又看了看凉宫春日那副有恃无恐的样子，一股无力感涌上心头。我知道，我输了。
+"随便妳要哪一台，尽管搬走吧……"我沮丧地坐回椅子上，脑袋无力地垂着，连抬头的力气都没有了。`,
+  },
+  {
+    title: '社员的愤怒',
+    text: `(社员A)【急得跺脚】社长！怎么能就这么给她啊！那可是我们攒了好久的钱买的！
+(社员B)【扶住我的肩膀】社长，别难过……我们也没办法啊……`,
+  },
+  {
+    title: '土匪的命令',
+    text: `凉宫春日完全没理会我们的情绪，径直走到电脑前，打量着每一台机器，嘴里还念叨着："哪一台是最新机种？"
+(社员C)【咬着牙】可恶……她就是个土匪！`,
+  },
+  {
+    title: '交出主力机',
+    text: `我没有说话，只是看着她指向那台上个月才新买的电脑——那是我们打算用来做大型程序开发的主力机。我刚想反驳，就看到她朝那个叫阿虚的男生抬了抬下巴，男生手里的相机对准了我们。`,
+  },
+  {
+    title: '最后的屈服',
+    text: `"相机，相机。"凉宫春日的语气轻飘飘的，却带着不容抗拒的威胁。
+"……拿去啦，土匪！"我咬着牙，一字一句地说，心里像是被刀割一样疼。`,
+  },
+  {
+    title: '搬走电脑',
+    text: `凉宫春日满意地点点头，从口袋里掏出一张纸条比对了一下，然后就指挥着那个叫阿虚的男生拔电缆，还冲我们喊："你们过来，帮我们把电脑搬到文艺社教室，再把网线接好，顺便架好校内网络！"`,
+  },
+  {
+    title: '教室门口·片刻后',
+    text: `我们看着凉宫春日一行人搬着电脑离开，那个叫朝比奈的女生还在哭，阿虚一脸无奈地扶着她，凉宫春日则走在最前面，一脸得意。`,
+  },
+  {
+    title: '失落的社长',
+    text: `(社长)【趴在桌上，声音沙哑】我们……我们的主力机……
+(社员B)【叹了口气】社长，别太难过了，至少……至少我们没被冠上那种奇怪的罪名。`,
+  },
+  {
+    title: '放弃与后悔',
+    text: `(社员C)【看着空荡荡的桌子】那个SOS团……以后我们还是离远点吧，太可怕了。
+教室里又恢复了安静，只是没有了键盘敲击声，只剩下风扇低沉的转动声，还有我们几个人沉重的叹息。`,
+  },
+  {
+    title: '心底的誓言',
+    text: `(社长)【心里默念】凉宫春日……这笔账，我记下了。`,
   },
 ];
 
-let currentScene = 0;
-const container = document.getElementById('story-container');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-const battleBtn = document.getElementById('battleBtn');
+let currentScene = -1;
+const titleEl = document.getElementById('dialogue-title');
+const textEl = document.getElementById('dialogue-text');
+const hintEl = document.querySelector('.dialogue-hint');
+const storyVisual = document.getElementById('story-visual');
 
-function updateScene() {
-  const scene = scenes[currentScene];
-  container.innerHTML = `
-    <div class="scene-card">
-      <h2>${scene.title}</h2>
-      <p>${scene.text}</p>
-    </div>
-  `;
-  prevBtn.disabled = currentScene === 0;
-  nextBtn.textContent = currentScene === scenes.length - 1 ? 'Finish' : 'Next';
+function showScene(index) {
+  if (index < 0) {
+    titleEl.textContent = '视觉小说';
+    textEl.textContent = '点击屏幕开始你的故事。';
+    hintEl.textContent = '点击任意位置继续';
+    return;
+  }
+
+  const scene = scenes[index];
+  titleEl.textContent = scene.title;
+  textEl.textContent = scene.text;
+  hintEl.textContent = index === scenes.length - 1 ? '最后一段，点击进入战斗' : '点击任意位置继续';
 }
 
-prevBtn.addEventListener('click', () => {
-  if (currentScene > 0) {
-    currentScene -= 1;
-    updateScene();
-  }
-});
+function advanceScene() {
+  currentScene += 1;
 
-nextBtn.addEventListener('click', () => {
-  if (currentScene < scenes.length - 1) {
-    currentScene += 1;
-    updateScene();
-  } else {
+  if (currentScene >= scenes.length) {
     window.location.href = '/battle/';
+    return;
+  }
+
+  showScene(currentScene);
+}
+
+storyVisual.addEventListener('click', advanceScene);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    advanceScene();
   }
 });
 
-battleBtn.addEventListener('click', () => {
-  window.location.href = '/battle/';
-});
-
-updateScene();
+showScene(currentScene);

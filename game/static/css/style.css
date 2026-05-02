@@ -58,6 +58,116 @@ p {
   justify-content: center;
 }
 
+.index-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.index-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.65);
+}
+
+.index-overlay {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.title-block {
+  width: min(760px, 90%);
+  margin-bottom: 48px;
+}
+
+.title-image {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.menu-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 18px 26px;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f5f5;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  text-decoration: none;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.menu-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.menu-btn-secondary {
+  background: rgba(20, 29, 64, 0.85);
+}
+
+.settings-button {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(20, 29, 64, 0.88);
+  color: #f5f5f5;
+  border-radius: 18px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-weight: 600;
+}
+
+.settings-icon {
+  font-size: 1.15rem;
+}
+
+.settings-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+@media (max-width: 640px) {
+  .title-block {
+    margin-bottom: 32px;
+  }
+
+  .menu-panel {
+    gap: 14px;
+  }
+
+  .settings-button {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
 .story-container,
 .game-area,
 .sidebar {
@@ -141,5 +251,66 @@ p {
 @media (max-width: 860px) {
   .battle-board {
     grid-template-columns: 1fr;
+  }
+}
+
+.story-visual {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 32px 24px 48px;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 35%), linear-gradient(180deg, #10121b 0%, #07090f 100%);
+}
+
+.dialogue-box {
+  width: min(860px, 100%);
+  background: rgba(8, 12, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 30px 32px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.dialogue-title {
+  margin: 0 0 18px;
+  font-size: clamp(1.7rem, 2.4vw, 2.4rem);
+  color: #f3e6c6;
+  letter-spacing: 0.04em;
+}
+
+.dialogue-text {
+  margin: 0;
+  color: #e8eefb;
+  font-size: 1.05rem;
+  line-height: 1.9;
+  min-height: 140px;
+}
+
+.dialogue-hint {
+  margin-top: 24px;
+  text-align: right;
+  color: #a8b9ff;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .story-visual {
+    padding: 20px 16px 30px;
+  }
+
+  .dialogue-box {
+    padding: 24px 22px;
+  }
+
+  .dialogue-title {
+    font-size: 1.8rem;
+  }
+
+  .dialogue-text {
+    font-size: 1rem;
+    min-height: 120px;
   }
 }

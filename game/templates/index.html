@@ -7,13 +7,21 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
 </head>
 <body>
-    <div class="page hero">
-        <h1>Defense Battle</h1>
-        <p>Welcome to the hybrid visual novel + tower defense game.</p>
-        <div class="hero-buttons">
-            <a class="btn" href="{% url 'haruhi:story' %}">Start Story</a>
-            <a class="btn btn-secondary" href="{% url 'haruhi:battle' %}">Play Battle</a>
+    <div class="index-shell">
+        <div class="index-bg"></div>
+        <div class="index-overlay">
+            <div class="title-block">
+                <img class="title-image" src="{% static 'images/title.jpg' %}" alt="Game Title" />
+            </div>
+            <div class="menu-panel">
+                <a class="menu-btn" href="{% url 'haruhi:story' %}">开始游戏</a>
+                <a class="menu-btn menu-btn-secondary" href="#">存档</a>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.querySelector('.index-bg').style.backgroundImage = `url("{% static 'images/background2.png' %}")`;
+    </script>
 </body>
 </html>
