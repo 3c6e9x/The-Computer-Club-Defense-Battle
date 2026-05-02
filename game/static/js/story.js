@@ -131,25 +131,28 @@ const scenes = [
 
 // 头像映射
 const avatarMap = {
+  '凉宫春日': '/static/images/suzumiya_avatar.png',
   '阿虚': '/static/images/阿虚_avatar.png',
   '社长': '/static/images/社长_avatar.png',
+  '旁白': null,  // 旁白无头像
 };
 
 // 音乐配置
 const mysterySongs = [
-  '/static/music/岡部啓一 (おかべ けいいち) - 憂鬱の憂鬱.mp3',
-  '/static/music/神前暁 - 何かがおかしい.mp3',
-  '/static/music/神前暁 - ザ・ミステリアス (神秘).mp3',
+  () => '/static/music/岡部啓一 (おかべ けいいち) - 憂鬱の憂鬱.mp3',
+  () => '/static/music/神前暁 - 何かがおかしい.mp3',
+  () => '/static/music/神前暁 - ザ・ミステリアス (神秘).mp3',
 ];
-const afterSong = '/static/music/神前暁 - おいおい (喂喂).mp3';
+const getAfterSong = () => '/static/music/神前暁 - おいおい (喂喂).mp3';
 
 // 音乐播放相关的场景索引
-const MYSTERY_SCENE_INDEX = 18;  // 目标场景（前一个场景播放第一批音乐）
-const AFTER_SONG_SCENE_INDEX = 19;  // 下一个场景播放特定音乐
+const MYSTERY_SCENE_INDEX = 17;  // 在scenes[17]显示前播放随机音乐
+const AFTER_SONG_SCENE_INDEX = 18;  // 在scenes[18]显示前播放特定音乐
 
 function playSceneMusic(musicPath) {
   const sceneMusic = document.getElementById('scene-music');
   if (sceneMusic) {
+    sceneMusic.pause();  // 先停止之前的音乐
     sceneMusic.src = musicPath;
     sceneMusic.loop = false;
     sceneMusic.play().catch(function(error) {
@@ -167,7 +170,7 @@ function getRandomMysteryMusic() {
   } while (lastUsedIndex !== null && randomIndex === Number(lastUsedIndex));
   
   setCookie('lastMysteryMusicIndex', randomIndex, 30);
-  return mysterySongs[randomIndex];
+  return mysterySongs[randomIndex]();  // 调用函数获取URL
 }
 
 function setCookie(name, value, days) {
@@ -189,16 +192,23 @@ function clearStoryProgress() {
   setCookie('storyProgress', '', -1);
 }
 
-let currentScene = getCookie('storyProgress') !== null ? Number(getCookie('storyProgress')) : -1;
+let currentScene = getCookie('storyProgress') !== null ? Number(getCookie('storyProgress')) : 0;
 const titleEl = document.getElementById('dialogue-title');
 const textEl = document.getElementById('dialogue-text');
 const storyVisual = document.getElementById('story-visual');
 
+// 页面加载完成后，停止来自其他页面的音乐
+window.addEventListener('load', function() {
+  // 不清空scene-music，只确保其他音乐被停止
+  // scene-music会由showScene根据场景来控制
+  // 这里主要是清理可能残留的其他音乐
+});
+
 function showScene(index) {
   if (index < 0) {
-    titleEl.textContent = '视觉小说';
+    titleEl.textContent = '';
     textEl.textContent = '';
-    storyVisual.style.backgroundImage = "url('/static/images/background1.png')";
+    storyVisual.style.backgroundImage = "url('/static/images/story_background.png')";
     return;
   }
 
@@ -206,20 +216,15 @@ function showScene(index) {
   titleEl.textContent = scene.title;
   textEl.textContent = scene.text;
   
-  // 设置头像
-  const avatarImg = document.getElementById('dialogue-avatar-img');
-  if (avatarMap[scene.title]) {
-    avatarImg.src = avatarMap[scene.title];
-  } else {
-    avatarImg.src = '';
-  }
+  // 设置背景
+  storyVisual.style.backgroundImage = "url('/static/images/story_background.png')";
   
   // 处理场景音乐
   if (index === MYSTERY_SCENE_INDEX) {
     const randomMusic = getRandomMysteryMusic();
     playSceneMusic(randomMusic);
   } else if (index === AFTER_SONG_SCENE_INDEX) {
-    playSceneMusic(afterSong);
+    playSceneMusic(getAfterSong());
   }
   
   saveSceneIndex(index);
@@ -229,6 +234,11 @@ function advanceScene() {
   currentScene += 1;
 
   if (currentScene >= scenes.length) {
+    // 停止场景音乐
+    const sceneMusic = document.getElementById('scene-music');
+    if (sceneMusic) {
+      sceneMusic.pause();
+    }
     clearStoryProgress();
     window.location.href = '/battle/';
     return;
