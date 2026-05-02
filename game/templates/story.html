@@ -9,26 +9,21 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     <style>
         .story-visual {
-            background: linear-gradient(180deg, rgba(16, 18, 27, 0.3) 0%, rgba(7, 9, 15, 0.7) 100%), url("{% static 'images/background1.png' %}") center/cover no-repeat;
+            background: linear-gradient(180deg, rgba(16, 18, 27, 0.3) 0%, rgba(7, 9, 15, 0.7) 100%), url("{% static 'images/story_background.png' %}") center/cover no-repeat;
         }
     </style>
 </head>
 <body>
     <div class="story-visual" id="story-visual">
         <div class="dialogue-box" id="dialogue-box">
-            <div class="dialogue-header">
-                <div class="dialogue-avatar">
-                    <img id="dialogue-avatar-img" src="" alt="头像" />
-                </div>
-                <div class="dialogue-title" id="dialogue-title">视觉小说</div>
-            </div>
+            <div class="dialogue-title" id="dialogue-title"></div>
             <div class="dialogue-text" id="dialogue-text">点击屏幕开始你的故事。</div>
         </div>
     </div>
     
     <!-- 背景音乐 -->
-    <audio id="bgm" autoplay loop>
-        <source src="{% static 'music/bgm.mp3' %}" type="audio/mpeg">
+    <audio id="bgm" loop>
+        <source src="{% static 'music/神前暁 - いつもの風景.mp3' %}" type="audio/mpeg">
         您的浏览器不支持音频播放
     </audio>
     
@@ -38,8 +33,10 @@
     </audio>
 
     <script src="{% static 'js/story.js' %}"></script>
-    
-    <script>
+     mystery3: '{% static "music/神前暁 - ザ・ミステリアス (神秘).mp3" %}',
+          afterSong: '{% static "music/神前暁 - おいおい (喂喂).mp3" %}'
+        };
+        
         // 背景音乐控制
         const bgm = document.getElementById('bgm');
         bgm.volume = 0.5; // 设置音量为50%
