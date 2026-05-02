@@ -8,9 +8,8 @@ const CONFIG = {
     CELL_SIZE: 40,
 
     STARTING_GOLD: 200,
-    STARTING_LIVES: 20,
     TOTAL_WAVES: 10,
-    BARRICADE_COUNT: 8,       // 玩家可用路障数
+    BARRICADE_COUNT: 8,
 
     SPAWN_INTERVAL_BASE: 0.8,
     WAVE_COOLDOWN: 0.5,
@@ -45,7 +44,7 @@ const CONFIG = {
 
 const OBSTACLE_MAP = [
     // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r0  顶部走道
+    [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // r0  顶部墙壁(封死)
     [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r1  门口行
     [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r2  课桌排1
     [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r3  课桌排1
@@ -156,7 +155,6 @@ function isPathCell(col, row) {
 
 function isBuildable(col, row) {
     if (!isWalkable(col, row)) return false;
-    if (isPathCell(col, row)) return false;
     // 门口和电脑格不可部署
     if (col === CONFIG.DOOR_COL && row === CONFIG.DOOR_ROW) return false;
     if (col === CONFIG.COMPUTER_COL && row === CONFIG.COMPUTER_ROW) return false;
@@ -211,7 +209,6 @@ canvas.height = CONFIG.GRID_ROWS * CONFIG.CELL_SIZE;   // 560
 const ctx = canvas.getContext('2d');
 
 const domGold   = document.getElementById('gold-display');
-const domLives  = document.getElementById('lives-display');
 const domWave   = document.getElementById('wave-display');
 const domScore  = document.getElementById('score-display');
 const domMsg    = document.getElementById('game-message');
@@ -238,9 +235,8 @@ function pixelToCell(px, py) {
    ============================================================ */
 
 const state = {
-    phase: 'barricade',          // 'barricade' | 'deploy' | 'battle'
+    phase: 'barricade',
     gold:   CONFIG.STARTING_GOLD,
-    lives:  CONFIG.STARTING_LIVES,
     wave:   0,
     score:  0,
 
@@ -283,7 +279,6 @@ function render() {
     if (state.phase === 'barricade') {
         drawBarricadeHover();
     } else {
-        drawPath();
         drawRangePreview();
         drawTowers();
         drawEnemies();
@@ -499,11 +494,8 @@ function drawProjectiles() {
 
 function updateHUD() {
     domGold.textContent  = state.gold;
-    domLives.textContent = state.lives;
     domWave.textContent  = state.wave;
     domScore.textContent = state.score;
-    domLives.className = state.lives <= 5 ? 'hud-warning' : '';
-    // 路障阶段显示剩余路障数
     if (state.phase === 'barricade') {
         document.getElementById('total-waves').textContent = state.barricadesRemaining + '障';
     } else {
@@ -547,7 +539,7 @@ function finalizeBarricades() {
     state.pathCells = extractPathCells(dm);
     state.phase = 'deploy';
     btnWave.textContent = '开始波次';
-    setMessage('路线已确定！请部署社员来防守。');
+    setMessage('请部署社员来防守。');
     updateHUD();
     return true;
 }
@@ -730,51 +722,62 @@ function updateEnemies(dt) {
     for (let i = state.enemies.length - 1; i >= 0; i--) {
         const e = state.enemies[i];
 
-        // 当前所在格子
-        const curCol = Math.round((e.x - CONFIG.CELL_SIZE / 2) / CONFIG.CELL_SIZE);
-        const curRow = Math.round((e.y - CONFIG.CELL_SIZE / 2) / CONFIG.CELL_SIZE);
+        // 尚未锁定目标格子，或已到达目标 → 选择新目标
+        if (e.targetCol == null || (e.x === e.targetX && e.y === e.targetY)) {
+            const curCol = Math.round((e.x - CONFIG.CELL_SIZE / 2) / CONFIG.CELL_SIZE);
+            const curRow = Math.round((e.y - CONFIG.CELL_SIZE / 2) / CONFIG.CELL_SIZE);
 
-        // 到达电脑 → 扣生命
-        if (curCol === CONFIG.COMPUTER_COL && curRow === CONFIG.COMPUTER_ROW) {
-            state.lives -= e.damage;
-            state.enemies.splice(i, 1);
-            updateHUD();
-            if (state.lives <= 0) endGame(false);
-            continue;
-        }
-
-        // 找邻居中距离电脑最近的（距离相等时随机）
-        let bestNeighbors = [];
-        let bestDist = Infinity;
-        for (const [dc, dr] of DIRS) {
-            const nc = curCol + dc, nr = curRow + dr;
-            if (nc < 0 || nc >= CONFIG.GRID_COLS || nr < 0 || nr >= CONFIG.GRID_ROWS) continue;
-            if (dm[nr][nc] < 0) continue;
-            if (dm[nr][nc] < bestDist) {
-                bestDist = dm[nr][nc];
-                bestNeighbors = [[nc, nr]];
-            } else if (dm[nr][nc] === bestDist) {
-                bestNeighbors.push([nc, nr]);
+            // 到达电脑 → 直接失败
+            if (curCol === CONFIG.COMPUTER_COL && curRow === CONFIG.COMPUTER_ROW) {
+                state.enemies.splice(i, 1);
+                endGame(false);
+                continue;
             }
+
+            // 找邻居中距离电脑最近的
+            let bestNeighbors = [];
+            let bestDist = Infinity;
+            for (const [dc, dr] of DIRS) {
+                const nc = curCol + dc, nr = curRow + dr;
+                if (nc < 0 || nc >= CONFIG.GRID_COLS || nr < 0 || nr >= CONFIG.GRID_ROWS) continue;
+                if (dm[nr][nc] < 0) continue;
+                if (dm[nr][nc] < bestDist) {
+                    bestDist = dm[nr][nc];
+                    bestNeighbors = [[nc, nr]];
+                } else if (dm[nr][nc] === bestDist) {
+                    bestNeighbors.push([nc, nr]);
+                }
+            }
+
+            if (bestNeighbors.length === 0) {
+                state.enemies.splice(i, 1);
+                continue;
+            }
+
+            // 均匀随机选（分叉口平均概率）
+            const [tc, tr] = bestNeighbors[Math.floor(Math.random() * bestNeighbors.length)];
+            e.targetCol = tc;
+            e.targetRow = tr;
+            e.targetX = tc * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+            e.targetY = tr * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
         }
 
-        if (bestNeighbors.length === 0) {
-            // 无路可走（不应该发生）
-            state.enemies.splice(i, 1);
-            continue;
-        }
-
-        // 随机选一个最优邻居（分叉口自然分流）
-        const [targetCol, targetRow] = bestNeighbors[Math.floor(Math.random() * bestNeighbors.length)];
-        const tx = targetCol * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-        const ty = targetRow * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-
-        const dx = tx - e.x, dy = ty - e.y;
+        // 向锁定目标移动
+        const dx = e.targetX - e.x, dy = e.targetY - e.y;
         const d = Math.sqrt(dx * dx + dy * dy);
         const move = e.speed * dt;
 
         if (d < move + 1) {
-            e.x = tx; e.y = ty;
+            e.x = e.targetX; e.y = e.targetY;
+            // 到达目标格——检查是否踩到社员
+            for (let ti = state.towers.length - 1; ti >= 0; ti--) {
+                if (state.towers[ti].col === e.targetCol && state.towers[ti].row === e.targetRow) {
+                    const removed = state.towers.splice(ti, 1)[0];
+                    setMessage(`${removed.type.name} 被敌人拿下了！`);
+                }
+            }
+            // 清除目标，下一帧重新选择
+            e.targetCol = null;
         } else {
             e.x += (dx / d) * move;
             e.y += (dy / d) * move;
@@ -816,7 +819,7 @@ function endGame(won) {
     state.gameWon = won;
     state.waveActive = false;
     btnWave.disabled = true;
-    setMessage(won ? '胜利！电脑社守住了活动室！' : '败北……活动室被凉宫春日占领了……');
+    setMessage(won ? '胜利！电脑社守住了活动室！' : '敌人碰到了电脑……活动室被凉宫春日占领了……');
 }
 
 /* ============================================================
