@@ -1,5 +1,9 @@
 # The-Computer-Club-Defense-Battle
-game/
+
+## Project Structure
+
+```
+haruhi_game/
 ├── manage.py
 ├── game/               # 主应用
 │   ├── models.py       # 剧情、关卡、角色、塔数据
@@ -16,3 +20,4 @@ game/
     │   └── tower_defense.js # 塔防逻辑
     └── css/
         └── style.css
+```
