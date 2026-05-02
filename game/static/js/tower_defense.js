@@ -5,21 +5,29 @@
 const CONFIG = {
     GRID_COLS: 20,
     GRID_ROWS: 14,
-    CELL_SIZE: 40,            // logical pixels -> canvas 800x560
+    CELL_SIZE: 40,
 
     STARTING_GOLD: 200,
     STARTING_LIVES: 20,
     TOTAL_WAVES: 10,
+    BARRICADE_COUNT: 8,       // 玩家可用路障数
 
-    SPAWN_INTERVAL_BASE: 0.8, // seconds between enemies in a wave
-    WAVE_COOLDOWN: 3.0,       // seconds before first enemy of next wave
+    SPAWN_INTERVAL_BASE: 0.8,
+    WAVE_COOLDOWN: 0.5,
 
-    // Dark theme palette
+    // 门口和电脑的格子坐标
+    DOOR_COL: 0, DOOR_ROW: 1,
+    COMPUTER_COL: 19, COMPUTER_ROW: 12,
+
+    // Colors
     COLOR_BG:           '#1a1d2e',
-    COLOR_GRID_LINE:    'rgba(255,255,255,0.10)',
+    COLOR_GRID_LINE:    'rgba(255,255,255,0.08)',
     COLOR_DESK:         'rgba(255,255,255,0.12)',
     COLOR_DESK_BORDER:  'rgba(255,255,255,0.18)',
-    COLOR_PATH:         'rgba(107,122,255,0.18)',
+    COLOR_BARRICADE:    'rgba(248,113,113,0.35)',
+    COLOR_DOOR:         '#4ade80',
+    COLOR_COMPUTER:     '#38bdf8',
+    COLOR_PATH:         'rgba(107,122,255,0.22)',
     COLOR_HOVER_VALID:  'rgba(107,122,255,0.30)',
     COLOR_HOVER_INVALID:'rgba(248,113,113,0.25)',
     COLOR_RANGE:        'rgba(107,122,255,0.10)',
@@ -30,67 +38,96 @@ const CONFIG = {
 
 /* ============================================================
    SECTION 1b — Classroom Obstacle Map
-   0 = walkable   1 = desk (blocked)
-   Desks in horizontal rows, vertical aisles at cols 3,7,11,15
-   Horizontal aisles at rows 1,4,7,10
+   0=走道  1=课桌(固定障碍)
+   门口(D)在(0,1)  电脑(C)在(19,12)
+   课桌4排，每排3组，组间留竖走道，排间留横过道
    ============================================================ */
 
 const OBSTACLE_MAP = [
     // 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r0  entry
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r1  top aisle
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r2  desk row
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r3  desk row
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r4  aisle
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r5  desk row
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r6  desk row
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r7  aisle
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r8  desk row
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r9  desk row
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r10 aisle
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r11 desk row
-    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r12 desk row
-    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r13 bottom aisle / exit
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r0  顶部走道
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r1  门口行
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r2  课桌排1
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r3  课桌排1
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r4  横过道
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r5  课桌排2
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r6  课桌排2
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r7  横过道
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r8  课桌排3
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r9  课桌排3
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r10 横过道
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1], // r11 课桌排4
+    [ 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0], // r12 课桌排4+电脑
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // r13 底部走道
 ];
 
 /* ============================================================
-   SECTION 1c — Path Waypoints (serpentine through classroom aisles)
-   Waypoint 0 = off-screen entry, last = off-screen exit
+   SECTION 1c — BFS Pathfinding Algorithms
+   核心：防堵死检测 + 最短路径提取 + 路径简化
    ============================================================ */
 
-const PATH_WAYPOINTS = [
-    { col: 3, row: -1 },  // off-screen top
-    { col: 3, row:  0 },
-    { col: 3, row:  1 },
-    { col: 3, row:  4 },  // turn right along aisle
-    { col: 7, row:  4 },
-    { col: 7, row:  7 },  // turn right along aisle
-    { col: 11, row: 7 },
-    { col: 11, row: 10 }, // turn right along aisle
-    { col: 15, row: 10 },
-    { col: 15, row: 13 },
-    { col: 15, row: 14 }, // off-screen bottom
-];
+const DIRS = [[0,1],[1,0],[0,-1],[-1,0]];
 
-// Build path cell set from waypoints
-function buildPathCells() {
-    const set = new Set();
-    for (let i = 1; i < PATH_WAYPOINTS.length - 1; i++) {
-        const a = PATH_WAYPOINTS[i];
-        const b = PATH_WAYPOINTS[i + 1];
-        if (a.col === b.col) {
-            const minR = Math.min(a.row, b.row);
-            const maxR = Math.max(a.row, b.row);
-            for (let r = minR; r <= maxR; r++) set.add(`${a.col},${r}`);
-        } else {
-            const minC = Math.min(a.col, b.col);
-            const maxC = Math.max(a.col, b.col);
-            for (let c = minC; c <= maxC; c++) set.add(`${c},${a.row}`);
+// 判断某个格是否为障碍（固定课桌 OR 玩家路障 OR 边界外）
+function isBlocked(col, row, barricades) {
+    if (col < 0 || col >= CONFIG.GRID_COLS || row < 0 || row >= CONFIG.GRID_ROWS) return true;
+    if (OBSTACLE_MAP[row][col] === 1) return true;
+    if (barricades && barricades.has(`${col},${row}`)) return true;
+    return false;
+}
+
+// 计算距离地图：BFS 从电脑出发，给每个可通行格子赋值"到电脑的步数"
+// 存为二维数组 distanceMap[row][col]，不可达为 -1
+function computeDistanceMap(barricades) {
+    const dist = Array.from({ length: CONFIG.GRID_ROWS }, () =>
+        Array(CONFIG.GRID_COLS).fill(-1)
+    );
+    const startC = CONFIG.COMPUTER_COL, startR = CONFIG.COMPUTER_ROW;
+    dist[startR][startC] = 0;
+    const queue = [[startC, startR]];
+    while (queue.length > 0) {
+        const [c, r] = queue.shift();
+        for (const [dc, dr] of DIRS) {
+            const nc = c + dc, nr = r + dr;
+            if (!isBlocked(nc, nr, barricades) && dist[nr][nc] === -1) {
+                dist[nr][nc] = dist[r][c] + 1;
+                queue.push([nc, nr]);
+            }
         }
     }
-    return set;
+    return dist;
 }
-const PATH_CELLS = buildPathCells();
+
+// BFS 连通性检测：门口→电脑 是否可达
+function hasPath(barricades) {
+    const dm = computeDistanceMap(barricades);
+    return dm[CONFIG.DOOR_ROW][CONFIG.DOOR_COL] >= 0;
+}
+
+// 从距离地图提取路径格子集合（用于渲染）
+function extractPathCells(distanceMap) {
+    const cells = new Set();
+    // 从门口出发，沿距离递减走到电脑
+    let c = CONFIG.DOOR_COL, r = CONFIG.DOOR_ROW;
+    const maxSteps = CONFIG.GRID_COLS * CONFIG.GRID_ROWS;
+    let steps = 0;
+    while (!(c === CONFIG.COMPUTER_COL && r === CONFIG.COMPUTER_ROW) && steps < maxSteps) {
+        cells.add(`${c},${r}`);
+        steps++;
+        let best = null, bestDist = distanceMap[r][c];
+        for (const [dc, dr] of DIRS) {
+            const nc = c + dc, nr = r + dr;
+            if (distanceMap[nr] && distanceMap[nr][nc] >= 0 && distanceMap[nr][nc] < bestDist) {
+                best = [nc, nr];
+                bestDist = distanceMap[nr][nc];
+            }
+        }
+        if (!best) break;
+        [c, r] = best;
+    }
+    cells.add(`${CONFIG.COMPUTER_COL},${CONFIG.COMPUTER_ROW}`);
+    return cells;
+}
 
 /* ============================================================
    SECTION 1d — Helpers
@@ -101,13 +138,29 @@ function isDesk(col, row) {
     return OBSTACLE_MAP[row][col] === 1;
 }
 
+function isBarricade(col, row) {
+    return state.barricades.has(`${col},${row}`);
+}
+
+function isWalkable(col, row) {
+    if (isDesk(col, row)) return false;
+    if (state.barricades.has(`${col},${row}`)) return false;
+    if (col === CONFIG.DOOR_COL && row === CONFIG.DOOR_ROW) return true;
+    if (col === CONFIG.COMPUTER_COL && row === CONFIG.COMPUTER_ROW) return true;
+    return col >= 0 && col < CONFIG.GRID_COLS && row >= 0 && row < CONFIG.GRID_ROWS;
+}
+
 function isPathCell(col, row) {
-    return PATH_CELLS.has(`${col},${row}`);
+    return state.pathCells.has(`${col},${row}`);
 }
 
 function isBuildable(col, row) {
-    if (col < 0 || col >= CONFIG.GRID_COLS || row < 0 || row >= CONFIG.GRID_ROWS) return false;
-    return OBSTACLE_MAP[row][col] === 0 && !isPathCell(col, row);
+    if (!isWalkable(col, row)) return false;
+    if (isPathCell(col, row)) return false;
+    // 门口和电脑格不可部署
+    if (col === CONFIG.DOOR_COL && row === CONFIG.DOOR_ROW) return false;
+    if (col === CONFIG.COMPUTER_COL && row === CONFIG.COMPUTER_ROW) return false;
+    return true;
 }
 
 function cellCenter(col, row) {
@@ -185,14 +238,23 @@ function pixelToCell(px, py) {
    ============================================================ */
 
 const state = {
+    phase: 'barricade',          // 'barricade' | 'deploy' | 'battle'
     gold:   CONFIG.STARTING_GOLD,
     lives:  CONFIG.STARTING_LIVES,
     wave:   0,
     score:  0,
 
-    towers:       [],   // {id, type, col, row, x, y, cooldownRemaining}
-    enemies:      [],   // {id, type, x, y, hp, maxHp, speed, value, damage, waypointIndex, size, color, sprite}
-    projectiles:  [],   // {x, y, target, speed, damage, color, traveled, maxRange}
+    towers:       [],
+    enemies:      [],
+    projectiles:  [],
+
+    // 路障系统
+    barricades:           new Set(),        // "col,row" 字符串集合
+    barricadesRemaining:  CONFIG.BARRICADE_COUNT,
+
+    // 动态路径（路障阶段结束后 BFS 计算）
+    distanceMap:   null,      // 二维数组 distanceMap[row][col] = 到电脑的步数
+    pathCells:     new Set(), // 路径经过的所有格子（用于渲染）
 
     selectedTower: null,
     waveActive: false,
@@ -202,7 +264,7 @@ const state = {
     gameOver: false,
     gameWon:  false,
 
-    mouseCell: null,    // {col, row} of cell under cursor
+    mouseCell: null,
     nextId: 1,
 };
 
@@ -211,16 +273,22 @@ const state = {
    ============================================================ */
 
 function render() {
-    // Background
     ctx.fillStyle = CONFIG.COLOR_BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid();
     drawDesks();
-    drawPath();
-    drawRangePreview();
-    drawTowers();
-    drawEnemies();
-    drawProjectiles();
+    drawBarricades();
+    drawDoor();
+    drawComputer();
+    if (state.phase === 'barricade') {
+        drawBarricadeHover();
+    } else {
+        drawPath();
+        drawRangePreview();
+        drawTowers();
+        drawEnemies();
+        drawProjectiles();
+    }
 }
 
 function drawGrid() {
@@ -240,42 +308,99 @@ function drawDesks() {
     for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
         for (let c = 0; c < CONFIG.GRID_COLS; c++) {
             if (isDesk(c, r)) {
-                const x = c * CONFIG.CELL_SIZE, y = r * CONFIG.CELL_SIZE;
-                // Desk body
-                ctx.fillStyle = CONFIG.COLOR_DESK;
-                ctx.fillRect(x + 2, y + 2, CONFIG.CELL_SIZE - 4, CONFIG.CELL_SIZE - 4);
-                // Desk border
-                ctx.strokeStyle = CONFIG.COLOR_DESK_BORDER;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(x + 2, y + 2, CONFIG.CELL_SIZE - 4, CONFIG.CELL_SIZE - 4);
-                // Chair dot (small circle)
-                ctx.fillStyle = 'rgba(255,255,255,0.10)';
-                ctx.beginPath();
-                ctx.arc(x + CONFIG.CELL_SIZE / 2, y + CONFIG.CELL_SIZE - 8, 5, 0, Math.PI * 2);
-                ctx.fill();
+                drawDeskCell(c, r);
             }
         }
     }
 }
 
+function drawDeskCell(c, r) {
+    const x = c * CONFIG.CELL_SIZE, y = r * CONFIG.CELL_SIZE;
+    ctx.fillStyle = CONFIG.COLOR_DESK;
+    ctx.fillRect(x + 2, y + 2, CONFIG.CELL_SIZE - 4, CONFIG.CELL_SIZE - 4);
+    ctx.strokeStyle = CONFIG.COLOR_DESK_BORDER;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 2, y + 2, CONFIG.CELL_SIZE - 4, CONFIG.CELL_SIZE - 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    ctx.beginPath();
+    ctx.arc(x + CONFIG.CELL_SIZE / 2, y + CONFIG.CELL_SIZE - 8, 5, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawBarricades() {
+    for (const key of state.barricades) {
+        const [c, r] = key.split(',').map(Number);
+        const x = c * CONFIG.CELL_SIZE, y = r * CONFIG.CELL_SIZE;
+        ctx.fillStyle = CONFIG.COLOR_BARRICADE;
+        ctx.fillRect(x + 3, y + 3, CONFIG.CELL_SIZE - 6, CONFIG.CELL_SIZE - 6);
+        ctx.strokeStyle = 'rgba(248,113,113,0.6)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 3, y + 3, CONFIG.CELL_SIZE - 6, CONFIG.CELL_SIZE - 6);
+        // X 标记
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1.5;
+        const cx = x + CONFIG.CELL_SIZE / 2, cy = y + CONFIG.CELL_SIZE / 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, cy - 5); ctx.lineTo(cx + 5, cy + 5);
+        ctx.moveTo(cx + 5, cy - 5); ctx.lineTo(cx - 5, cy + 5);
+        ctx.stroke();
+    }
+}
+
+function drawDoor() {
+    const x = CONFIG.DOOR_COL * CONFIG.CELL_SIZE, y = CONFIG.DOOR_ROW * CONFIG.CELL_SIZE;
+    ctx.fillStyle = CONFIG.COLOR_DOOR;
+    ctx.fillRect(x + 4, y + 4, CONFIG.CELL_SIZE - 8, CONFIG.CELL_SIZE - 8);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('门', x + CONFIG.CELL_SIZE / 2, y + CONFIG.CELL_SIZE / 2 + 5);
+    ctx.textAlign = 'start';
+}
+
+function drawComputer() {
+    const x = CONFIG.COMPUTER_COL * CONFIG.CELL_SIZE, y = CONFIG.COMPUTER_ROW * CONFIG.CELL_SIZE;
+    ctx.fillStyle = CONFIG.COLOR_COMPUTER;
+    ctx.fillRect(x + 4, y + 4, CONFIG.CELL_SIZE - 8, CONFIG.CELL_SIZE - 8);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PC', x + CONFIG.CELL_SIZE / 2, y + CONFIG.CELL_SIZE / 2 + 5);
+    ctx.textAlign = 'start';
+}
+
+function drawBarricadeHover() {
+    if (!state.mouseCell) return;
+    const { col, row } = state.mouseCell;
+    if (!canPlaceBarricade(col, row)) {
+        ctx.fillStyle = CONFIG.COLOR_HOVER_INVALID;
+        ctx.fillRect(col * CONFIG.CELL_SIZE, row * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        return;
+    }
+    ctx.fillStyle = CONFIG.COLOR_HOVER_VALID;
+    ctx.fillRect(col * CONFIG.CELL_SIZE, row * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+}
+
 function drawPath() {
-    // Light highlight on path cells
-    for (const key of PATH_CELLS) {
+    // 路径格子高亮
+    for (const key of state.pathCells) {
         const [c, r] = key.split(',').map(Number);
         ctx.fillStyle = CONFIG.COLOR_PATH;
-        ctx.fillRect(c * CONFIG.CELL_SIZE, r * CONFIG.CELL_SIZE,
-                     CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
+        ctx.fillRect(c * CONFIG.CELL_SIZE, r * CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE);
     }
-
-    // Entry / Exit labels
-    ctx.fillStyle = '#6b7aff';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    const entry = PATH_WAYPOINTS[1];
-    const exit  = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 2];
-    ctx.fillText('IN', entry.col * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2, entry.row * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2 + 4);
-    ctx.fillText('OUT', exit.col * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2, exit.row * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2 + 4);
-    ctx.textAlign = 'start';
+    // 距离数字（调试用，部署阶段显示）
+    if (state.phase === 'deploy' && state.distanceMap) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '9px sans-serif';
+        ctx.textAlign = 'center';
+        for (const key of state.pathCells) {
+            const [c, r] = key.split(',').map(Number);
+            ctx.fillText(state.distanceMap[r][c],
+                c * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+                r * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2 + 4);
+        }
+        ctx.textAlign = 'start';
+    }
 }
 
 function drawRangePreview() {
@@ -378,6 +503,12 @@ function updateHUD() {
     domWave.textContent  = state.wave;
     domScore.textContent = state.score;
     domLives.className = state.lives <= 5 ? 'hud-warning' : '';
+    // 路障阶段显示剩余路障数
+    if (state.phase === 'barricade') {
+        document.getElementById('total-waves').textContent = state.barricadesRemaining + '障';
+    } else {
+        document.getElementById('total-waves').textContent = CONFIG.TOTAL_WAVES;
+    }
 }
 
 function setMessage(text) {
@@ -385,7 +516,44 @@ function setMessage(text) {
 }
 
 /* ============================================================
-   SECTION 14 — Game Loop & Init
+   SECTION 6b — Barricade Logic
+   ============================================================ */
+
+function canPlaceBarricade(col, row) {
+    if (state.phase !== 'barricade') return false;
+    if (state.barricadesRemaining <= 0) return false;
+    // 必须是可以走路的空格
+    if (!isWalkable(col, row)) return false;
+    if (isDesk(col, row)) return false;
+    // 不能放在门口或电脑格
+    if (col === CONFIG.DOOR_COL && row === CONFIG.DOOR_ROW) return false;
+    if (col === CONFIG.COMPUTER_COL && row === CONFIG.COMPUTER_ROW) return false;
+    // 不能重复放置
+    if (state.barricades.has(`${col},${row}`)) return false;
+    // BFS 检测：放了这个路障后门口→电脑是否仍连通
+    const testSet = new Set(state.barricades);
+    testSet.add(`${col},${row}`);
+    if (!hasPath(testSet)) return false;
+    return true;
+}
+
+function finalizeBarricades() {
+    const dm = computeDistanceMap(state.barricades);
+    if (dm[CONFIG.DOOR_ROW][CONFIG.DOOR_COL] < 0) {
+        setMessage('错误：门口到电脑没有通路！请移除一些路障。');
+        return false;
+    }
+    state.distanceMap = dm;
+    state.pathCells = extractPathCells(dm);
+    state.phase = 'deploy';
+    btnWave.textContent = '开始波次';
+    setMessage('路线已确定！请部署社员来防守。');
+    updateHUD();
+    return true;
+}
+
+/* ============================================================
+   SECTION 14 — Game Loop
    ============================================================ */
 
 let lastTime = 0;
@@ -393,11 +561,11 @@ let lastTime = 0;
 function gameLoop(timestamp) {
     if (!lastTime) lastTime = timestamp;
     let dt = (timestamp - lastTime) / 1000;
-    if (dt > 0.1) dt = 0.1; // clamp for tab-switch
+    if (dt > 0.1) dt = 0.1;
     lastTime = timestamp;
 
-    // Combat & movement (no-op until Step 7)
-    if (!state.gameOver) {
+    // 只在战斗阶段更新敌人和战斗
+    if (!state.gameOver && state.phase === 'battle') {
         updateEnemies(dt);
         updateCombat(dt);
         updateWaveSpawning(dt);
@@ -428,18 +596,16 @@ const ENEMY_CONFIGS = [
 function createEnemy(configIndex, waveNum) {
     const cfg = ENEMY_CONFIGS[configIndex];
     const hpScale = 1 + (waveNum - 1) * 0.20;
-    const startWp = PATH_WAYPOINTS[0];
     return {
         id: state.nextId++,
         configIndex: configIndex,
-        x: startWp.col * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
-        y: startWp.row * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+        x: CONFIG.DOOR_COL * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
+        y: CONFIG.DOOR_ROW * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
         hp: Math.round(cfg.hp * hpScale),
         maxHp: Math.round(cfg.hp * hpScale),
         speed: cfg.speed,
         value: cfg.value,
         damage: cfg.damage,
-        waypointIndex: 1,
         size: cfg.size,
         color: cfg.color,
         sprite: cfg.sprite,
@@ -558,25 +724,57 @@ function updateCombat(dt) {
    ============================================================ */
 
 function updateEnemies(dt) {
+    const dm = state.distanceMap;
+    if (!dm) return;
+
     for (let i = state.enemies.length - 1; i >= 0; i--) {
         const e = state.enemies[i];
-        if (e.waypointIndex >= PATH_WAYPOINTS.length) {
-            // Reached exit — lose life
+
+        // 当前所在格子
+        const curCol = Math.round((e.x - CONFIG.CELL_SIZE / 2) / CONFIG.CELL_SIZE);
+        const curRow = Math.round((e.y - CONFIG.CELL_SIZE / 2) / CONFIG.CELL_SIZE);
+
+        // 到达电脑 → 扣生命
+        if (curCol === CONFIG.COMPUTER_COL && curRow === CONFIG.COMPUTER_ROW) {
             state.lives -= e.damage;
             state.enemies.splice(i, 1);
             updateHUD();
             if (state.lives <= 0) endGame(false);
             continue;
         }
-        const wp = PATH_WAYPOINTS[e.waypointIndex];
-        const tx = wp.col * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
-        const ty = wp.row * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+
+        // 找邻居中距离电脑最近的（距离相等时随机）
+        let bestNeighbors = [];
+        let bestDist = Infinity;
+        for (const [dc, dr] of DIRS) {
+            const nc = curCol + dc, nr = curRow + dr;
+            if (nc < 0 || nc >= CONFIG.GRID_COLS || nr < 0 || nr >= CONFIG.GRID_ROWS) continue;
+            if (dm[nr][nc] < 0) continue;
+            if (dm[nr][nc] < bestDist) {
+                bestDist = dm[nr][nc];
+                bestNeighbors = [[nc, nr]];
+            } else if (dm[nr][nc] === bestDist) {
+                bestNeighbors.push([nc, nr]);
+            }
+        }
+
+        if (bestNeighbors.length === 0) {
+            // 无路可走（不应该发生）
+            state.enemies.splice(i, 1);
+            continue;
+        }
+
+        // 随机选一个最优邻居（分叉口自然分流）
+        const [targetCol, targetRow] = bestNeighbors[Math.floor(Math.random() * bestNeighbors.length)];
+        const tx = targetCol * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+        const ty = targetRow * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+
         const dx = tx - e.x, dy = ty - e.y;
         const d = Math.sqrt(dx * dx + dy * dy);
         const move = e.speed * dt;
+
         if (d < move + 1) {
             e.x = tx; e.y = ty;
-            e.waypointIndex++;
         } else {
             e.x += (dx / d) * move;
             e.y += (dy / d) * move;
@@ -726,20 +924,78 @@ canvas.addEventListener('click', (e) => {
     const { x, y } = canvasCoords(e);
     const { col, row } = pixelToCell(x, y);
     if (col < 0 || col >= CONFIG.GRID_COLS || row < 0 || row >= CONFIG.GRID_ROWS) return;
-    tryPlaceTower(col, row);
+
+    if (state.phase === 'barricade') {
+        if (canPlaceBarricade(col, row)) {
+            state.barricades.add(`${col},${row}`);
+            state.barricadesRemaining--;
+            updateHUD();
+            const remain = state.barricadesRemaining;
+            setMessage(remain > 0
+                ? `路障已放置。还剩 ${remain} 个。点击「确认路线」开始部署社员。`
+                : '路障已用完！点击「确认路线」开始部署社员。');
+        } else if (state.barricades.has(`${col},${row}`)) {
+            state.barricades.delete(`${col},${row}`);
+            state.barricadesRemaining++;
+            updateHUD();
+            setMessage(`路障已移除。还剩 ${state.barricadesRemaining} 个。`);
+        } else {
+            setMessage('此处无法放置路障（会堵死通路或已是障碍）。');
+        }
+    } else if (state.phase === 'deploy' || (state.phase === 'battle' && !state.waveActive)) {
+        tryPlaceTower(col, row);
+    }
 });
 
 btnWave.addEventListener('click', () => {
     if (state.gameOver) return;
-    if (state.waveActive) {
-        setMessage('敌人还在入侵中！');
+
+    if (state.phase === 'barricade') {
+        if (finalizeBarricades()) {
+            btnWave.textContent = '开始波次';
+        }
         return;
     }
-    if (state.wave >= CONFIG.TOTAL_WAVES) {
-        setMessage('所有波次已经结束！');
+
+    if (state.phase === 'deploy') {
+        if (state.waveActive) {
+            setMessage('敌人还在入侵中！');
+            return;
+        }
+        if (state.wave >= CONFIG.TOTAL_WAVES) {
+            setMessage('所有波次已经结束！');
+            return;
+        }
+        state.phase = 'battle';
+        startWave();
         return;
     }
-    startWave();
+
+    if (state.phase === 'battle') {
+        if (state.waveActive) {
+            setMessage('敌人还在入侵中！');
+            return;
+        }
+        if (state.wave >= CONFIG.TOTAL_WAVES) {
+            setMessage('所有波次已经结束！');
+            return;
+        }
+        startWave();
+    }
+});
+
+// 右键移除路障（仅 barricade 阶段）
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (state.phase !== 'barricade') return;
+    const { x, y } = canvasCoords(e);
+    const { col, row } = pixelToCell(x, y);
+    if (state.barricades.has(`${col},${row}`)) {
+        state.barricades.delete(`${col},${row}`);
+        state.barricadesRemaining++;
+        updateHUD();
+        setMessage(`路障已移除。还剩 ${state.barricadesRemaining} 个。`);
+    }
 });
 
 /* ============================================================
@@ -749,7 +1005,8 @@ btnWave.addEventListener('click', () => {
 function initGame() {
     updateHUD();
     renderTowerList();
-    setMessage('请先在侧边栏选择一座塔，再点击地图上的高亮格子来部署');
+    setMessage(`放置路障（剩 ${state.barricadesRemaining} 个）——点击空格堵路来设计敌人路线。右键可移除。完成后点「确认路线」。`);
+    btnWave.textContent = '确认路线';
     lastTime = 0;
     requestAnimationFrame(gameLoop);
 }
