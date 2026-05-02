@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battle</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+</head>
+<body>
+    <div class="page battle-page">
+        <h1>Tower Defense</h1>
+        <div class="battle-board">
+            <div class="sidebar">
+                <h2>Towers</h2>
+                <ul id="tower-list" class="tower-list"></ul>
+            </div>
+            <div class="game-area">
+                <div id="game-log" class="game-log">Select a tower and click deploy.</div>
+                <button id="spawnWave" class="btn">Spawn Wave</button>
+            </div>
+        </div>
+        <a class="btn btn-secondary" href="{% url 'haruhi:story' %}">Back to Story</a>
+    </div>
+    <script src="{% static 'js/tower_defense.js' %}"></script>
+</body>
+</html>

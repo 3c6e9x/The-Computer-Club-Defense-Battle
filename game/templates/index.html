@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Defense Battle</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+</head>
+<body>
+    <div class="page hero">
+        <h1>Defense Battle</h1>
+        <p>Welcome to the hybrid visual novel + tower defense game.</p>
+        <div class="hero-buttons">
+            <a class="btn" href="{% url 'haruhi:story' %}">Start Story</a>
+            <a class="btn btn-secondary" href="{% url 'haruhi:battle' %}">Play Battle</a>
+        </div>
+    </div>
+</body>
+</html>
