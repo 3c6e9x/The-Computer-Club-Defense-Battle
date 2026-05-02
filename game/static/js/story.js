@@ -129,6 +129,47 @@ const scenes = [
   },
 ];
 
+// 头像映射
+const avatarMap = {
+  '阿虚': '/static/images/阿虚_avatar.png',
+  '社长': '/static/images/社长_avatar.png',
+};
+
+// 音乐配置
+const mysterySongs = [
+  '/static/music/岡部啓一 (おかべ けいいち) - 憂鬱の憂鬱.mp3',
+  '/static/music/神前暁 - 何かがおかしい.mp3',
+  '/static/music/神前暁 - ザ・ミステリアス (神秘).mp3',
+];
+const afterSong = '/static/music/神前暁 - おいおい (喂喂).mp3';
+
+// 音乐播放相关的场景索引
+const MYSTERY_SCENE_INDEX = 18;  // 目标场景（前一个场景播放第一批音乐）
+const AFTER_SONG_SCENE_INDEX = 19;  // 下一个场景播放特定音乐
+
+function playSceneMusic(musicPath) {
+  const sceneMusic = document.getElementById('scene-music');
+  if (sceneMusic) {
+    sceneMusic.src = musicPath;
+    sceneMusic.loop = false;
+    sceneMusic.play().catch(function(error) {
+      console.log('音乐播放被阻止或出错:', error);
+    });
+  }
+}
+
+function getRandomMysteryMusic() {
+  const lastUsedIndex = getCookie('lastMysteryMusicIndex');
+  let randomIndex;
+  
+  do {
+    randomIndex = Math.floor(Math.random() * mysterySongs.length);
+  } while (lastUsedIndex !== null && randomIndex === Number(lastUsedIndex));
+  
+  setCookie('lastMysteryMusicIndex', randomIndex, 30);
+  return mysterySongs[randomIndex];
+}
+
 function setCookie(name, value, days) {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
@@ -157,12 +198,30 @@ function showScene(index) {
   if (index < 0) {
     titleEl.textContent = '视觉小说';
     textEl.textContent = '';
+    storyVisual.style.backgroundImage = "url('/static/images/background1.png')";
     return;
   }
 
   const scene = scenes[index];
   titleEl.textContent = scene.title;
   textEl.textContent = scene.text;
+  
+  // 设置头像
+  const avatarImg = document.getElementById('dialogue-avatar-img');
+  if (avatarMap[scene.title]) {
+    avatarImg.src = avatarMap[scene.title];
+  } else {
+    avatarImg.src = '';
+  }
+  
+  // 处理场景音乐
+  if (index === MYSTERY_SCENE_INDEX) {
+    const randomMusic = getRandomMysteryMusic();
+    playSceneMusic(randomMusic);
+  } else if (index === AFTER_SONG_SCENE_INDEX) {
+    playSceneMusic(afterSong);
+  }
+  
   saveSceneIndex(index);
 }
 
