@@ -25,7 +25,6 @@ const CONFIG = {
     COLOR_RANGE:        'rgba(107,122,255,0.10)',
     COLOR_RANGE_BORDER: 'rgba(107,122,255,0.35)',
 
-    ENEMY_COLORS: { basic: '#fbbf24', fast: '#38bdf8', tank: '#ef4444', boss: '#ec4899' },
     TOWER_COLORS: { Archer: '#4ade80', Mage: '#a78bfa', Cannon: '#f87171' },
 };
 
@@ -119,19 +118,33 @@ function cellCenter(col, row) {
 }
 
 /* ============================================================
-   SECTION 2 — Sprite Registry (placeholder, loaded in Step 8)
+   SECTION 2 — Sprite Registry
+   收集所有 ENEMY_CONFIGS 和 DEFAULT_TOWERS 中的 sprite 路径，
+   统一预加载。后期换图只需改配置里的 sprite 字段。
    ============================================================ */
 
 const SPRITES = {};
 
-function loadSprites(spriteMap) {
+function loadAllSprites() {
+    // 收集所有需要加载的图片路径
+    const paths = new Set();
+    ENEMY_CONFIGS.forEach(c => { if (c.sprite) paths.add(c.sprite); });
+    DEFAULT_TOWERS.forEach(t => { if (t.sprite) paths.add(t.sprite); });
+
     const promises = [];
-    for (const [key, url] of Object.entries(spriteMap)) {
+    for (const path of paths) {
         const img = new Image();
-        img.src = url;
-        SPRITES[key] = img;
-        promises.push(new Promise((resolve) => { img.onload = resolve; }));
+        img.src = '/static/' + path;
+        SPRITES[path] = img;
+        promises.push(new Promise((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => {
+                console.warn('[TD] Failed to load sprite:', path, '(fallback to shape)');
+                resolve(); // 不阻塞启动，fallback 到几何图形
+            };
+        }));
     }
+    console.log('[TD] Preloading', promises.length, 'sprites...');
     return Promise.all(promises);
 }
 
@@ -291,16 +304,20 @@ function drawRangePreview() {
 
 function drawTowers() {
     for (const t of state.towers) {
-        const size = CONFIG.CELL_SIZE * 0.65;
+        const size = CONFIG.CELL_SIZE * 0.7;
         const sx = t.x - size / 2;
         const sy = t.y - size / 2;
 
-        // Body
-        ctx.fillStyle = t.type.color;
-        ctx.fillRect(sx, sy, size, size);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(sx, sy, size, size);
+        const img = t.type.sprite ? SPRITES[t.type.sprite] : null;
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, sx, sy, size, size);
+        } else {
+            ctx.fillStyle = t.type.color;
+            ctx.fillRect(sx, sy, size, size);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(sx, sy, size, size);
+        }
 
         // Firing cooldown bar
         const cdPct = 1 - (t.cooldownRemaining / (1.0 / t.type.fireRate));
@@ -311,16 +328,23 @@ function drawTowers() {
 
 function drawEnemies() {
     for (const e of state.enemies) {
-        // Body
-        ctx.beginPath();
-        ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
-        ctx.fillStyle = e.color;
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        const img = e.sprite ? SPRITES[e.sprite] : null;
+        if (img && img.complete && img.naturalWidth > 0) {
+            // 用图片渲染
+            const sz = e.size * 2.5;
+            ctx.drawImage(img, e.x - sz / 2, e.y - sz / 2, sz, sz);
+        } else {
+            // 几何图形 fallback
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+            ctx.fillStyle = e.color;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
 
-        // HP bar
+        // HP bar (始终显示)
         const barW = e.size * 2;
         const barH = 4;
         const barY = e.y - e.size - 8;
@@ -385,51 +409,66 @@ function gameLoop(timestamp) {
 
 /* ============================================================
    SECTION 7 — Enemy Data & Spawning
+   数组驱动，新增敌人只需在此数组加一条记录即可。
+   key: 唯一标识  name: 中文名
+   hp/speed/value/damage/size: 基础属性
+   color: 无图片时的几何图形颜色（fallback）
+   sprite: 图片路径，null = 使用几何图形
+   appearWave: 首次出现波次   ratio: 该波次中占比权重
    ============================================================ */
 
-const ENEMY_TYPES = {
-    basic: { hp: 30,  speed: 60,  value: 10, damage: 1, size: 10, color: CONFIG.ENEMY_COLORS.basic, sprite: null },
-    fast:  { hp: 20,  speed: 110, value: 15, damage: 1, size: 7,  color: CONFIG.ENEMY_COLORS.fast,  sprite: null },
-    tank:  { hp: 120, speed: 40,  value: 30, damage: 3, size: 14, color: CONFIG.ENEMY_COLORS.tank,  sprite: null },
-    boss:  { hp: 300, speed: 35,  value: 100, damage: 5, size: 18, color: CONFIG.ENEMY_COLORS.boss,  sprite: 'images/haruhi_1.png' },
-};
+const ENEMY_CONFIGS = [
+    { key: 'grunt',   name: '普通学生', hp: 30,  speed: 60,  value: 10, damage: 1, size: 10, color: '#fbbf24', sprite: null,                        appearWave: 1, ratio: 5 },
+    { key: 'runner',  name: '应援团',   hp: 22,  speed: 110, value: 15, damage: 1, size: 8,  color: '#38bdf8', sprite: 'images/1096_1.png',           appearWave: 2, ratio: 3 },
+    { key: 'tank',    name: '风纪委员', hp: 130, speed: 40,  value: 30, damage: 3, size: 14, color: '#ef4444', sprite: 'images/C_3.png',              appearWave: 4, ratio: 2 },
+    { key: 'elite',   name: '学生会干部', hp: 80, speed: 50, value: 50, damage: 2, size: 12, color: '#a855f7', sprite: 'images/Kyon_1.png',        appearWave: 6, ratio: 1 },
+    { key: 'boss',    name: '凉宫春日', hp: 350, speed: 35, value: 100, damage: 5, size: 20, color: '#ec4899', sprite: 'images/haruhi_1.png',         appearWave: 5, ratio: 0 },
+];
 
-function createEnemy(typeKey, waveNum) {
-    const proto = ENEMY_TYPES[typeKey];
-    const hpScale  = 1 + (waveNum - 1) * 0.25;
-    const startWp  = PATH_WAYPOINTS[0];
+function createEnemy(configIndex, waveNum) {
+    const cfg = ENEMY_CONFIGS[configIndex];
+    const hpScale = 1 + (waveNum - 1) * 0.20;
+    const startWp = PATH_WAYPOINTS[0];
     return {
         id: state.nextId++,
-        type: typeKey,
+        configIndex: configIndex,
         x: startWp.col * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
         y: startWp.row * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2,
-        hp: Math.round(proto.hp * hpScale),
-        maxHp: Math.round(proto.hp * hpScale),
-        speed: proto.speed,
-        value: proto.value,
-        damage: proto.damage,
+        hp: Math.round(cfg.hp * hpScale),
+        maxHp: Math.round(cfg.hp * hpScale),
+        speed: cfg.speed,
+        value: cfg.value,
+        damage: cfg.damage,
         waypointIndex: 1,
-        size: proto.size,
-        color: proto.color,
-        sprite: proto.sprite,
+        size: cfg.size,
+        color: cfg.color,
+        sprite: cfg.sprite,
     };
 }
 
 function generateWave(waveNum) {
+    const pool = [];
+    // 根据每类敌人的 appearWave 和 ratio 构建候选池
+    for (let i = 0; i < ENEMY_CONFIGS.length; i++) {
+        const cfg = ENEMY_CONFIGS[i];
+        if (waveNum >= cfg.appearWave && cfg.ratio > 0) {
+            for (let j = 0; j < cfg.ratio; j++) {
+                pool.push(i);
+            }
+        }
+    }
+    // boss 固定出现（波次5和10各来一个）
+    const bossIndex = ENEMY_CONFIGS.findIndex(c => c.key === 'boss');
+    const totalCount = 3 + Math.floor(waveNum * 1.8);
     const enemies = [];
-    const basicCount = 3 + Math.floor(waveNum * 1.5);
-    for (let i = 0; i < basicCount; i++) enemies.push(createEnemy('basic', waveNum));
-
-    if (waveNum >= 3) {
-        for (let i = 0; i < Math.floor((waveNum - 2) * 0.8); i++) enemies.push(createEnemy('fast', waveNum));
+    if (waveNum % 5 === 0 && bossIndex >= 0) {
+        enemies.push(createEnemy(bossIndex, waveNum));
     }
-    if (waveNum >= 5) {
-        for (let i = 0; i < Math.floor((waveNum - 4) * 0.5); i++) enemies.push(createEnemy('tank', waveNum));
+    for (let i = 0; i < totalCount; i++) {
+        const idx = pool[Math.floor(Math.random() * pool.length)];
+        enemies.push(createEnemy(idx, waveNum));
     }
-    if (waveNum % 5 === 0) {
-        enemies.push(createEnemy('boss', waveNum));
-    }
-    // Shuffle
+    // 洗牌
     for (let i = enemies.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [enemies[i], enemies[j]] = [enemies[j], enemies[i]];
@@ -587,9 +626,9 @@ function endGame(won) {
    ============================================================ */
 
 const DEFAULT_TOWERS = [
-    { id: 1, name: '弓箭手社员', damage: 15, range: 3.5, cost: 50,  fireRate: 1.0, color: CONFIG.TOWER_COLORS.Archer, sprite: 'images/Kyon_1.png',      description: '均衡型' },
-    { id: 2, name: '魔法社员',   damage: 30, range: 2.5, cost: 80,  fireRate: 0.6, color: CONFIG.TOWER_COLORS.Mage,   sprite: 'images/C_1.png',          description: '高伤害，攻速较慢' },
-    { id: 3, name: '重炮社员',   damage: 50, range: 2.0, cost: 120, fireRate: 0.4, color: CONFIG.TOWER_COLORS.Cannon, sprite: 'images/C_2.png',          description: '毁灭性打击，射程短' },
+    { id: 1, name: '弓箭手社员', damage: 15, range: 3.5, cost: 50,  fireRate: 1.0, color: CONFIG.TOWER_COLORS.Archer, sprite: 'images/C_1.png',          description: '均衡型' },
+    { id: 2, name: '魔法社员',   damage: 30, range: 2.5, cost: 80,  fireRate: 0.6, color: CONFIG.TOWER_COLORS.Mage,   sprite: 'images/C_2.png',          description: '高伤害，攻速较慢' },
+    { id: 3, name: '重炮社员',   damage: 50, range: 2.0, cost: 120, fireRate: 0.4, color: CONFIG.TOWER_COLORS.Cannon, sprite: 'images/C_3.png',          description: '毁灭性打击，射程短' },
 ];
 
 let towerTypes = [];
@@ -719,6 +758,9 @@ function initGame() {
 console.log('[TD] Starting game...');
 fetchTowers().then(() => {
     console.log('[TD] Towers loaded:', towerTypes.length);
+    return loadAllSprites();
+}).then(() => {
+    console.log('[TD] Sprites ready, starting game loop');
     initGame();
 });
 
