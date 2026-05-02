@@ -133,7 +133,7 @@ const storyVisual = document.getElementById('story-visual');
 function showScene(index) {
   if (index < 0) {
     titleEl.textContent = '视觉小说';
-    textEl.textContent = '点击屏幕开始你的故事。';
+    textEl.textContent = '';
     return;
   }
 
