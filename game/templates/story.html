@@ -7,11 +7,21 @@
     <title>Story</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <style>
+        .story-visual {
+            background: linear-gradient(180deg, rgba(16, 18, 27, 0.3) 0%, rgba(7, 9, 15, 0.7) 100%), url("{% static 'images/background1.png' %}") center/cover no-repeat;
+        }
+    </style>
 </head>
 <body>
     <div class="story-visual" id="story-visual">
         <div class="dialogue-box" id="dialogue-box">
-            <div class="dialogue-title" id="dialogue-title">视觉小说</div>
+            <div class="dialogue-header">
+                <div class="dialogue-avatar">
+                    <img id="dialogue-avatar-img" src="" alt="头像" />
+                </div>
+                <div class="dialogue-title" id="dialogue-title">视觉小说</div>
+            </div>
             <div class="dialogue-text" id="dialogue-text">点击屏幕开始你的故事。</div>
         </div>
     </div>
