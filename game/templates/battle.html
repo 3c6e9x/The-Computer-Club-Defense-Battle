@@ -4,23 +4,31 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Battle</title>
+    <title>电脑社防御战</title>
+    {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
 </head>
 <body>
     <div class="page battle-page">
-        <h1>Tower Defense</h1>
+        <h1>电脑社防御战</h1>
         <div class="battle-board">
             <div class="sidebar">
-                <h2>Towers</h2>
+                <h2>社员</h2>
                 <ul id="tower-list" class="tower-list"></ul>
             </div>
             <div class="game-area">
-                <div id="game-log" class="game-log">Select a tower and click deploy.</div>
-                <button id="spawnWave" class="btn">Spawn Wave</button>
+                <div class="game-hud">
+                    <span class="hud-item"><span class="hud-label">经费</span> <span id="gold-display">200</span>G</span>
+                    <span class="hud-item"><span class="hud-label">生命</span> <span id="lives-display">20</span></span>
+                    <span class="hud-item"><span class="hud-label">波次</span> <span id="wave-display">0</span>/<span id="total-waves">10</span></span>
+                    <span class="hud-item"><span class="hud-label">得分</span> <span id="score-display">0</span></span>
+                </div>
+                <canvas id="game-canvas"></canvas>
+                <div id="game-message" class="game-message">请先在侧边栏选择一位社员，再点击地图上的高亮格子来部署</div>
+                <button id="spawnWave" class="btn">召唤敌人波次</button>
             </div>
         </div>
-        <a class="btn btn-secondary" href="{% url 'haruhi:story' %}">Back to Story</a>
+        <a class="btn btn-secondary" href="{% url 'haruhi:story' %}">返回故事</a>
     </div>
     <script src="{% static 'js/tower_defense.js' %}"></script>
 </body>

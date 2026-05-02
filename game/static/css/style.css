@@ -254,6 +254,57 @@ p {
   }
 }
 
+/* ===== Tower Defense Canvas HUD ===== */
+
+.game-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.hud-item {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+
+.hud-label {
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 4px;
+}
+
+.hud-warning {
+  color: #ef4444;
+}
+
+/* Canvas */
+#game-canvas {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: crosshair;
+}
+
+/* Status message */
+.game-message {
+  margin: 8px 0 4px;
+  min-height: 22px;
+  font-size: 0.9rem;
+  color: #6b7aff;
+}
+
+/* Tower stats in sidebar */
+.tower-stats {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 3px;
+}
+
 .story-visual {
   min-height: 100vh;
   display: flex;
