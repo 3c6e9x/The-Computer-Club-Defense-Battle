@@ -125,7 +125,26 @@ const scenes = [
   },
 ];
 
-let currentScene = -1;
+function setCookie(name, value, days) {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+}
+
+function getCookie(name) {
+  const cookieString = document.cookie.split('; ').find((row) => row.startsWith(name + '='));
+  return cookieString ? decodeURIComponent(cookieString.split('=')[1]) : null;
+}
+
+function saveSceneIndex(index) {
+  setCookie('storyProgress', index, 30);
+}
+
+function clearStoryProgress() {
+  setCookie('storyProgress', '', -1);
+}
+
+let currentScene = getCookie('storyProgress') !== null ? Number(getCookie('storyProgress')) : -1;
 const titleEl = document.getElementById('dialogue-title');
 const textEl = document.getElementById('dialogue-text');
 const storyVisual = document.getElementById('story-visual');
@@ -140,12 +159,14 @@ function showScene(index) {
   const scene = scenes[index];
   titleEl.textContent = scene.title;
   textEl.textContent = scene.text;
+  saveSceneIndex(index);
 }
 
 function advanceScene() {
   currentScene += 1;
 
   if (currentScene >= scenes.length) {
+    clearStoryProgress();
     window.location.href = '/battle/';
     return;
   }
