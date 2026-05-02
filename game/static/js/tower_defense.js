@@ -1021,6 +1021,10 @@ function initGame() {
     requestAnimationFrame(gameLoop);
 }
 
+// 停止任何来自故事页的残留音乐
+const anyMusic = document.querySelector('audio');
+if (anyMusic) { anyMusic.pause(); anyMusic.src = ''; }
+
 // Start
 console.log('[TD] Starting game...');
 fetchTowers().then(() => {
