@@ -93,7 +93,15 @@ function showScene(index) {
     return;
   }
   if (index >= scenes.length) return;
-  titleEl.textContent = scenes[index].title;
+  
+  // 当title是"旁白"时不显示title，但保留元素以保持对话框大小
+  if (scenes[index].title === '旁白') {
+    titleEl.textContent = '';
+    titleEl.style.visibility = 'hidden';
+  } else {
+    titleEl.textContent = scenes[index].title;
+    titleEl.style.visibility = 'visible';
+  }
   textEl.textContent = scenes[index].text;
 }
 
