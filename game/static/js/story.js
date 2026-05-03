@@ -17,11 +17,25 @@ const scenes = [
   { title: '旁白', text: '在视线的末端，凉宫春日正带着骇人的气势逼近。而她身旁的那个短发无口少女——长门有希，正微张着嘴唇，以一种人类绝对无法达到的超高速低声吟唱着。' },
   { title: '长门有希', text: '……空间参数干涉确认，重力常数局部重写，资讯链接构造变更中……' },
   { title: '旁白', text: '这见鬼的空间渐渐褪去了色彩，只剩下刺眼的白与深邃的黑。电研社社长绝望地发现，在这个空间里似乎有一条诡异的物理法则：只要踩在纯白色的区域，就能健步如飞；但只要踏入哪怕一点点黑色的阴影，双腿就像是被灌注了成吨的水泥，沉重得连迈出一步都极为艰难！' },
-  { title: '凉宫春日', text: '哼哼哼！跑啊，你怎么不跑了？即使你跑得再快，只要我们有长门这个超级王牌（Carry）在场，你就算逃到宇宙边缘也飞不出我的手掌心！' },
+  { title: '凉宫春日', text: '哼哼哼！跑啊，你怎么不跑了？即使你跑得再快，只要我们有长门这个超级王牌在场，你就算逃到宇宙边缘也飞不出我的手掌心！' },
   { title: '电研社社长', text: '可恶！难道我的新电脑就要在这里陨落了吗？！……不，等等！旁边有一间没有被空间侵蚀的教室！' },
   { title: '旁白', text: '仿佛抓住了最后一根救命稻草，他抱紧怀里的主机，用尽最后的力气一头扎进了旁边的教室里。' },
   { title: '电研社社长', text: '别小看电研社的毅力啊啊啊！' },
   { title: '关卡介绍', text: '接下来，你作为电脑研究社的社长，要防御SOS团的进攻，春日会因为进攻失败而感到愤怒，1096也会穿越到任务开始之前，让所有成员重新部署下一次进攻，此时各位团员可能会使用他们的特殊技能以便于拿到电脑，电研社社长也会掏出更多的资金去完善下一次的防御。' },
+];
+
+// 梦醒场景（失败时显示）
+const defeatScenes = [
+  { title: '旁白', text: '猛地睁开眼，电研社社长从课桌上弹了起来。额头上布满了一排冷汗，心脏还在扑通扑通地狂跳。眼前是明亮的教室，没有扭曲的黑白空间，也没有那个穷凶极恶的暴君。' },
+  { title: '电研社社长', text: '呼……原来只是一场梦啊。我就说嘛，怎么会有跑酷和塔防结合的奇怪空间……' },
+  { title: '同学A', text: '（凑近）喂，社长，你发什么神经呢？你没事吧？昨天一整天都不来上课，难道是买新电脑太兴奋，导致急性脑缺氧了吗？' },
+  { title: '电研社社长', text: '哎？等等……昨天一整天？' },
+  { title: '旁白', text: '正当他的大脑因为这句不合逻辑的话而陷入当机时，走廊外传来了两个无比熟悉的声音，正由远及近地飘入教室。' },
+  { title: '阿虚', text: '我说古泉，昨天那只长得像异形一样的巨大蝗虫到底是怎么回事？在那种黄沙漫天的闭锁空间里，被那么大尺寸的虫子追着跑，我的精神值可是会掉光的啊。' },
+  { title: '古泉一树', text: '呵呵，毕竟那是凉宫同学潜意识里对\'夺取\'和\'狩猎\'概念的具象化嘛。不过，能在梦境的沙漠里看到如此庞大的精神生命体，确实给人带来了不小的冲击力呢。多亏了长门同学的辅助，不然还真有些棘手。' },
+  { title: '旁白', text: '昨天？闭锁空间？狩猎？蝗虫？一段荒诞的记忆如同电流般闪过大脑。电研社社长僵硬地低下头，颤抖着手摸向自己课桌旁——那个本该放着崭新电脑机箱的空地。' },
+  { title: '电研社社长', text: '我的……我的新电脑呢？！！！' },
+  { title: '旁白', text: '点击屏幕选择：重新挑战防御战，还是返回首页？' },
 ];
 
 // 头像映射
@@ -32,6 +46,7 @@ const avatarMap = {
   '古泉一树': '/static/images/古泉一树_avatar.png',
   '长门有希': '/static/images/长门有希_avatar.png',
   '电研社社长': '/static/images/电研社社长_avatar.png',
+  '同学A': null,
   '旁白': null,
   '关卡介绍': null,
 };
@@ -48,10 +63,23 @@ document.querySelectorAll('audio').forEach(a => { a.pause(); a.src = ''; });
 
 let musicStarted = false;
 let currentScene = -1;
+let isDefeatScenario = false;
+let activeScenes = scenes; // 默认使用普通场景
 const titleEl = document.getElementById('dialogue-title');
 const textEl = document.getElementById('dialogue-text');
 const storyVisual = document.getElementById('story-visual');
 const sceneMusic = document.getElementById('scene-music');
+
+// 检查是否从塔防失败返回
+function checkDefeatState() {
+  if (localStorage.getItem('towerDefeat') === 'true') {
+    isDefeatScenario = true;
+    activeScenes = defeatScenes;
+    localStorage.removeItem('towerDefeat');
+    return true;
+  }
+  return false;
+}
 
 // 随机选一首，不与上次重复
 function pickRandomTrack() {
@@ -87,17 +115,17 @@ function stopMusic() {
 }
 
 function showScene(index) {
-  if (index < 0 || index >= scenes.length) return;
+  if (index < 0 || index >= activeScenes.length) return;
   
   // 当title是"旁白"时不显示title，但保留元素以保持对话框大小
-  if (scenes[index].title === '旁白') {
+  if (activeScenes[index].title === '旁白') {
     titleEl.textContent = '';
     titleEl.style.visibility = 'hidden';
   } else {
-    titleEl.textContent = scenes[index].title;
+    titleEl.textContent = activeScenes[index].title;
     titleEl.style.visibility = 'visible';
   }
-  textEl.textContent = scenes[index].text;
+  textEl.textContent = activeScenes[index].text;
 }
 
 function advanceScene() {
@@ -105,13 +133,37 @@ function advanceScene() {
   startMusic();
 
   currentScene++;
-  if (currentScene >= scenes.length) {
+  if (currentScene >= activeScenes.length) {
     stopMusic();
+    
+    // 如果是梦醒场景，显示选择界面
+    if (isDefeatScenario) {
+      showDefeatChoiceMenu();
+      return;
+    }
+    
+    // 否则进入逃脱游戏
     localStorage.removeItem('escapeResume');
     window.location.href = '/escape/';
     return;
   }
   showScene(currentScene);
+}
+
+function showDefeatChoiceMenu() {
+  titleEl.textContent = '选择';
+  titleEl.style.visibility = 'visible';
+  textEl.innerHTML = '<button id="retry-btn" class="btn" style="display: block; margin: 15px auto;">重新挑战防御战</button><button id="home-btn" class="btn" style="display: block; margin: 15px auto;">返回首页</button>';
+  
+  document.getElementById('retry-btn').addEventListener('click', () => {
+    stopMusic();
+    window.location.href = '/escape/';
+  });
+  
+  document.getElementById('home-btn').addEventListener('click', () => {
+    stopMusic();
+    window.location.href = '/';
+  });
 }
 
 storyVisual.addEventListener('click', advanceScene);
@@ -126,5 +178,6 @@ document.addEventListener('keydown', (event) => {
 window.addEventListener('beforeunload', stopMusic);
 window.addEventListener('pagehide', stopMusic);
 
-// 初始状态 - 直接显示第一个场景
+// 初始状态 - 检查是否从失败返回，然后显示第一个场景
+checkDefeatState();
 showScene(0);

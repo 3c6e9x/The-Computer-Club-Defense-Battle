@@ -830,9 +830,10 @@ function endGame(won) {
         setMessage('塔防胜利！返回逃脱战……');
         setTimeout(() => { window.location.href = '/escape/'; }, 1500);
     } else {
-        setMessage('敌人碰到了电脑……活动室被凉宫春日占领了……');
+        setMessage('敌人碰到了电脑……活动室被凉宫春日占领了……你醒了……');
+        localStorage.setItem('towerDefeat', 'true');
         localStorage.removeItem('escapeResume');
-        setTimeout(() => { window.location.href = '/defeat/'; }, 2000);
+        setTimeout(() => { window.location.href = '/story/'; }, 2000);
     }
 }
 
