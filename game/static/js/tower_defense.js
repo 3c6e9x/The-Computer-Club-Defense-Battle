@@ -851,9 +851,9 @@ function endGame(won) {
    ============================================================ */
 
 const DEFAULT_TOWERS = [
-    { id: 1, name: '社长',   damage: 20, range: 3.5, cost: 50,  fireRate: 1.0, color: CONFIG.TOWER_COLORS.Archer, sprite: 'images/社长.png',  description: '均衡型，射程远' },
-    { id: 2, name: '社员A',  damage: 30, range: 2.5, cost: 80,  fireRate: 0.6, color: CONFIG.TOWER_COLORS.Mage,   sprite: 'images/社员1.png', description: '高伤害，攻速较慢' },
-    { id: 3, name: '社员B',  damage: 50, range: 2.0, cost: 120, fireRate: 0.4, color: CONFIG.TOWER_COLORS.Cannon, sprite: 'images/社员2.png', description: '毁灭性打击，射程短' },
+    { id: 1, name: '社长',   damage: 10, range: 3.5, cost: 50,  fireRate: 1.0, color: CONFIG.TOWER_COLORS.Archer, sprite: 'images/社长.png',  description: '射程远，1.0发/秒' },
+    { id: 2, name: '社员A',  damage: 35, range: 2.5, cost: 80,  fireRate: 0.6, color: CONFIG.TOWER_COLORS.Mage,   sprite: 'images/社员1.png', description: '均衡输出，0.6发/秒' },
+    { id: 3, name: '社员B',  damage: 75, range: 2.0, cost: 120, fireRate: 0.4, color: CONFIG.TOWER_COLORS.Cannon, sprite: 'images/社员2.png', description: '毁灭重炮，0.4发/秒' },
 ];
 
 let towerTypes = [];
@@ -886,7 +886,7 @@ function renderTowerList() {
         li.className = 'tower-item';
         li.innerHTML = `
             <div style="font-weight:600">${t.name}</div>
-            <div class="tower-stats">伤害: ${t.damage} | 射程: ${t.range} | 费用: ${t.cost}G</div>`;
+            <div class="tower-stats">伤害: ${t.damage} | 攻速: ${t.fireRate}/s | 射程: ${t.range} | ${t.cost}G</div>`;
         li.addEventListener('click', () => {
             state.selectedTower = t;
             document.querySelectorAll('.tower-item').forEach(el => el.classList.remove('active'));

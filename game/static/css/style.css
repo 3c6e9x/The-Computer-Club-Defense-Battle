@@ -300,9 +300,10 @@ p {
 
 /* Tower stats in sidebar */
 .tower-stats {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.5);
   margin-top: 3px;
+  word-break: keep-all;
 }
 
 .story-visual {

@@ -183,7 +183,7 @@ if (!resumeData) {
 }
 
 // ── 金币资源 ──
-const RESOURCE_COUNT = 90;
+const RESOURCE_COUNT = 270;
 const resources = [];
 let collectedGold = resumeData ? (resumeData.collectedGold || 0) : 0;
 
@@ -503,10 +503,10 @@ function draw() {
     chasers.forEach(c => {
         mctx.fillStyle = c.color; mctx.fillRect(c.x * ms - 1, c.y * ms - 1, 2, 2);
     });
-    // 道具
+    // 道具（统一亮青色）
     items.forEach(it => {
         if (it.collected) return;
-        mctx.fillStyle = it.color; mctx.fillRect(it.x * ms - 1, it.y * ms - 1, 2, 2);
+        mctx.fillStyle = '#00ffcc'; mctx.fillRect(it.x * ms - 1, it.y * ms - 1, 2, 2);
     });
 }
 
