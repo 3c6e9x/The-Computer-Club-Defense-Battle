@@ -121,12 +121,16 @@ localStorage.removeItem('escapeResume');  // 只恢复一次
 
 if (resumeData) {
     isReturning = true;
+    // 恢复玩家和电脑的状态
     player.x = resumeData.playerX;
     player.y = resumeData.playerY;
     player.hasComputer = resumeData.hasComputer;
     computer.x = resumeData.computerX;
     computer.y = resumeData.computerY;
     computer.picked = resumeData.computerPicked;
+    // 不恢复追兵位置，让它们重新生成
+    // 重置游戏状态为playing
+    gameState = 'playing';
 }
 
 function randomSpawn(minDist, preferTerrain) {
@@ -163,23 +167,14 @@ function spawnChaser(name, color, speed, personality, nearPlayer) {
     };
 }
 
+// 塔防胜利后返回时，追兵生成在离玩家较远的位置（800-1200像素）
 const chasers = [
-    spawnChaser('凉宫春日', '#FF69B4', 3.0, 'hunter',     isReturning),
-    spawnChaser('阿虚',     '#00CED1', 1.6, 'reluctant',  isReturning),
-    spawnChaser('学姐',     '#FF4500', 2.4, 'interceptor', isReturning),
+    spawnChaser('凉宫春日', '#FF69B4', 3.0, 'hunter',     false),
+    spawnChaser('阿虚',     '#00CED1', 1.6, 'reluctant',  false),
+    spawnChaser('学姐',     '#FF4500', 2.4, 'interceptor', false),
 ];
 
-// 从塔防返回时，敌人重新随机分布在玩家周围
-if (resumeData) {
-    chasers.forEach(c => {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 400 + Math.random() * 600;
-        c.x = Math.max(50, Math.min(CONFIG.WORLD_W - 50, player.x + Math.cos(angle) * dist));
-        c.y = Math.max(50, Math.min(CONFIG.WORLD_H - 50, player.y + Math.sin(angle) * dist));
-        c.angle = Math.random() * Math.PI * 2;
-        c.timer = 0;
-    });
-}
+// 塔防胜利后，追兵位置重新生成，不恢复之前的位置
 
 // 电脑：非恢复模式下随机放置
 if (!resumeData) {
