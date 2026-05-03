@@ -109,7 +109,8 @@ function advanceScene() {
   currentScene++;
   if (currentScene >= scenes.length) {
     stopMusic();
-    window.location.href = '/battle/';
+    localStorage.removeItem('escapeResume');
+    window.location.href = '/escape/';
     return;
   }
   showScene(currentScene);

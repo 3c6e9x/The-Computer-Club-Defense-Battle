@@ -16,6 +16,18 @@ def battle(request):
     return render(request, 'battle.html')
 
 
+def escape(request):
+    return render(request, 'escape.html')
+
+
+def victory(request):
+    return render(request, 'victory.html')
+
+
+def defeat(request):
+    return render(request, 'defeat.html')
+
+
 def tower_data(request):
     towers = list(Tower.objects.values('id', 'name', 'damage', 'range', 'cost', 'icon'))
     return JsonResponse({'towers': towers})

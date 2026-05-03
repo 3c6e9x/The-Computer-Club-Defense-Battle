@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>胜利！</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+</head>
+<body>
+    <div class="page hero" style="text-align:center">
+        <h1 style="color:#4ade80">电脑社守住了！</h1>
+        <p>你成功把电脑带回了活动室，锁好了门。<br>SOS团的进攻被彻底击退了。</p>
+        <a class="btn" href="{% url 'haruhi:index' %}">返回首页</a>
+    </div>
+</body>
+</html>

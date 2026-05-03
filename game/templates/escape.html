@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>凉宫春日的逃脱</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <style>
+        body {
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            min-height: 100vh;
+            background: #000; color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        canvas { border: 2px solid #333; image-rendering: pixelated; }
+        #hud {
+            position: fixed; top: 8px; left: 8px;
+            background: rgba(0,0,0,0.75); padding: 8px 14px;
+            border-radius: 8px; font-size: 13px; line-height: 1.6;
+            pointer-events: none; z-index: 10;
+        }
+        #minimap {
+            position: fixed; bottom: 8px; right: 8px;
+            border: 1px solid #666; border-radius: 4px; z-index: 10;
+        }
+        #msg {
+            position: fixed; bottom: 60px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); padding: 6px 18px;
+            border-radius: 10px; font-size: 14px; z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <canvas id="minimap" width="160" height="160"></canvas>
+    <div id="hud">
+        凉宫春日的逃脱<br>
+        <span style="color:#aaa">方向键移动 | 空格拾取/锁定</span>
+    </div>
+    <div id="msg"></div>
+    <script src="{% static 'js/escape.js' %}"></script>
+</body>
+</html>

@@ -826,7 +826,14 @@ function endGame(won) {
     state.gameWon = won;
     state.waveActive = false;
     btnWave.disabled = true;
-    setMessage(won ? '胜利！电脑社守住了活动室！' : '敌人碰到了电脑……活动室被凉宫春日占领了……');
+    if (won) {
+        setMessage('塔防胜利！返回逃脱战……');
+        setTimeout(() => { window.location.href = '/escape/'; }, 1500);
+    } else {
+        setMessage('敌人碰到了电脑……活动室被凉宫春日占领了……');
+        localStorage.removeItem('escapeResume');
+        setTimeout(() => { window.location.href = '/defeat/'; }, 2000);
+    }
 }
 
 /* ============================================================
