@@ -7,7 +7,7 @@ const CONFIG = {
     GRID_ROWS: 14,
     CELL_SIZE: 40,
 
-    STARTING_GOLD: 200,
+    STARTING_GOLD: 80,   // 基础经费，逃脱中捡的金币会叠加
     TOTAL_WAVES: 10,
     BARRICADE_COUNT: 8,
 
@@ -710,7 +710,7 @@ function updateCombat(dt) {
     for (let i = state.enemies.length - 1; i >= 0; i--) {
         const e = state.enemies[i];
         if (e.hp <= 0) {
-            state.gold += e.value;
+            state.gold += Math.ceil(e.value * 0.5);   // 击杀回报减半，鼓励逃脱中收集
             state.score += e.value;
             state.enemies.splice(i, 1);
             updateHUD();
@@ -1020,6 +1020,11 @@ canvas.addEventListener('contextmenu', (e) => {
    ============================================================ */
 
 function initGame() {
+    // 读取逃脱中收集的金币（不删除存档，留给逃脱页面恢复位置）
+    const resume = JSON.parse(localStorage.getItem('escapeResume') || 'null');
+    const bonusGold = resume ? (resume.collectedGold || 0) * 5 : 0;
+    state.gold = CONFIG.STARTING_GOLD + bonusGold;
+
     updateHUD();
     renderTowerList();
     setMessage(`放置路障（剩 ${state.barricadesRemaining} 个）——点击空格堵路来设计敌人路线。右键可移除。完成后点「确认路线」。`);
@@ -1027,6 +1032,15 @@ function initGame() {
     lastTime = 0;
     requestAnimationFrame(gameLoop);
 }
+
+// 测试后门：按 Q 直接胜利
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'q' || e.key === 'Q') {
+        if (!state.gameOver && state.phase !== 'barricade') {
+            endGame(true);
+        }
+    }
+});
 
 // 停止任何来自故事页的残留音乐
 const anyMusic = document.querySelector('audio');

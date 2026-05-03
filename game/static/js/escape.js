@@ -169,10 +169,15 @@ const chasers = [
     spawnChaser('学姐',     '#FF4500', 2.4, 'interceptor', isReturning),
 ];
 
-// 恢复敌人位置（如果从存档恢复）
-if (resumeData && resumeData.chasers) {
-    resumeData.chasers.forEach((s, i) => {
-        if (i < chasers.length) { chasers[i].x = s.x; chasers[i].y = s.y; }
+// 从塔防返回时，敌人重新随机分布在玩家周围
+if (resumeData) {
+    chasers.forEach(c => {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 400 + Math.random() * 600;
+        c.x = Math.max(50, Math.min(CONFIG.WORLD_W - 50, player.x + Math.cos(angle) * dist));
+        c.y = Math.max(50, Math.min(CONFIG.WORLD_H - 50, player.y + Math.sin(angle) * dist));
+        c.angle = Math.random() * Math.PI * 2;
+        c.timer = 0;
     });
 }
 
@@ -182,8 +187,27 @@ if (!resumeData) {
     computer.x = p.x; computer.y = p.y;
 }
 
+// ── 金币资源 ──
+const RESOURCE_COUNT = 30;
+const resources = [];
+let collectedGold = resumeData ? (resumeData.collectedGold || 0) : 0;
+
+for (let i = 0; i < RESOURCE_COUNT; i++) {
+    const p = randomSpawn(200, false);
+    resources.push({ x: p.x, y: p.y, collected: false, id: i });
+}
+
+if (resumeData && resumeData.resources) {
+    resumeData.resources.forEach((s, i) => {
+        if (i < resources.length) {
+            resources[i].x = s.x; resources[i].y = s.y;
+            resources[i].collected = s.collected;
+        }
+    });
+}
+
 if (isReturning) {
-    msgEl.textContent = '塔防胜利！继续逃脱……';
+    msgEl.textContent = `塔防胜利！继续逃脱……已收集 ${collectedGold} 金`;
 }
 
 // ── 输入 ──
@@ -191,14 +215,22 @@ window.addEventListener('keydown', e => {
     keys[e.key] = true;
     if (e.key === ' ') { e.preventDefault(); interact(); }
     if (e.key === 'r' || e.key === 'R') location.reload();
+    if (e.key === 'q' || e.key === 'Q') { player.hasComputer = true; msgEl.textContent = 'DEBUG: 获得电脑'; }
 });
 window.addEventListener('keyup', e => keys[e.key] = false);
 
 function interact() {
     if (gameState !== 'playing') return;
+    // 拾取金币（自动，不用按键）
+    resources.forEach(r => {
+        if (!r.collected && Math.hypot(player.x - r.x, player.y - r.y) < 30) {
+            r.collected = true; collectedGold++;
+            msgEl.textContent = `拾取金币！已收集 ${collectedGold} 金`;
+        }
+    });
     if (!player.hasComputer && Math.hypot(player.x - computer.x, player.y - computer.y) < 40) {
         computer.picked = true; player.hasComputer = true;
-        msgEl.textContent = '拾取成功！快回总部(地图中心)！';
+        msgEl.textContent = `拾取电脑！已收集 ${collectedGold} 金。快回总部！`;
     }
     if (player.hasComputer && Math.hypot(player.x - CONFIG.HQ_X, player.y - CONFIG.HQ_Y) < 40) {
         gameState = 'win'; msgEl.textContent = 'WIN! 成功锁门！';
@@ -321,6 +353,8 @@ function updateChasers() {
                 hasComputer: player.hasComputer,
                 computerX: computer.x, computerY: computer.y,
                 computerPicked: computer.picked,
+                collectedGold: collectedGold,
+                resources: resources.map(r => ({ x: r.x, y: r.y, collected: r.collected })),
                 chasers: chasers.map(c => ({ x: c.x, y: c.y })),
             }));
             setTimeout(() => { window.location.href = '/battle/'; }, 1500);
@@ -364,6 +398,17 @@ function draw() {
         ctx.fillStyle = '#fff'; ctx.font = '10px monospace';
         ctx.fillText('HQ', hqx - 10, hqy + 4);
     }
+
+    // 金币资源
+    resources.forEach(r => {
+        if (r.collected) return;
+        const rx = r.x - camX, ry = r.y - camY;
+        if (rx < -10 || rx > CONFIG.VIEW_W + 10 || ry < -10 || ry > CONFIG.VIEW_H + 10) return;
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath(); ctx.arc(rx, ry, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '9px monospace';
+        ctx.fillText('G', rx - 3, ry + 4);
+    });
 
     // 电脑
     if (!computer.picked) {

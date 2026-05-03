@@ -29,14 +29,20 @@
 
     <script>
         document.querySelector('.index-bg').style.backgroundImage = `url("{% static 'images/background2.png' %}")`;
-        
-        // 背景音乐控制
+
         const bgm = document.getElementById('bgm');
-        bgm.volume = 0.5; // 设置音量为50%
-        
-        // 处理自动播放政策
-        bgm.play().catch(function(error) {
-            console.log('自动播放被阻止，用户需要交互后才能播放');
+        bgm.volume = 0.5;
+
+        // 尝试自动播放，被拦截则在用户首次交互后播放
+        bgm.play().catch(() => {
+            console.log('Autoplay blocked, waiting for user interaction...');
+            function onInteract() {
+                bgm.play();
+                document.removeEventListener('click', onInteract);
+                document.removeEventListener('keydown', onInteract);
+            }
+            document.addEventListener('click', onInteract);
+            document.addEventListener('keydown', onInteract);
         });
     </script>
 </body>
