@@ -214,15 +214,19 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => keys[e.key] = false);
 
-function interact() {
+function autoPickup() {
     if (gameState !== 'playing') return;
-    // 拾取金币（自动，不用按键）
+    // 金币：每帧检测，走近自动捡
     resources.forEach(r => {
         if (!r.collected && Math.hypot(player.x - r.x, player.y - r.y) < 30) {
             r.collected = true; collectedGold++;
             msgEl.textContent = `拾取金币！已收集 ${collectedGold} 金`;
         }
     });
+}
+
+function interact() {
+    if (gameState !== 'playing') return;
     if (!player.hasComputer && Math.hypot(player.x - computer.x, player.y - computer.y) < 40) {
         computer.picked = true; player.hasComputer = true;
         msgEl.textContent = `拾取电脑！已收集 ${collectedGold} 金。快回总部！`;
@@ -279,9 +283,12 @@ function steerAround(c, targetAngle, probeDist) {
 
 function updateChasers() {
     if (gameState !== 'playing') return;
-    const chasing = player.hasComputer;
+    // 全局追逐：拿了电脑 OR 进入玩家 300px 范围内
+    const globalChase = player.hasComputer;
 
     chasers.forEach(c => {
+        const distToPlayer = Math.hypot(player.x - c.x, player.y - c.y);
+        const chasing = globalChase || distToPlayer < 300;
         const spd = calcSpeed(c.baseSpeed, c.x, c.y);
         c.timer--;
         c.stuckTimer--;
@@ -448,7 +455,7 @@ function draw() {
 
 // ── 游戏循环 ──
 function gameLoop() {
-    updatePlayer(); updateChasers(); updateCamera(); draw();
+    updatePlayer(); autoPickup(); updateChasers(); updateCamera(); draw();
     if (gameState === 'win') {
         ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, CONFIG.VIEW_W, CONFIG.VIEW_H);
         ctx.fillStyle = '#0F0'; ctx.font = 'bold 36px monospace';
