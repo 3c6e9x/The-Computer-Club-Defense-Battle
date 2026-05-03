@@ -183,7 +183,7 @@ if (!resumeData) {
 }
 
 // ── 金币资源 ──
-const RESOURCE_COUNT = 30;
+const RESOURCE_COUNT = 90;
 const resources = [];
 let collectedGold = resumeData ? (resumeData.collectedGold || 0) : 0;
 
@@ -205,6 +205,32 @@ if (isReturning) {
     msgEl.textContent = `塔防胜利！继续逃脱……已收集 ${collectedGold} 金`;
 }
 
+// ── 道具拾取 ──
+const ITEM_TYPES = [
+    { key: 'esp',      name: '古泉的ESP念力弹', color: '#ef4444', desc: '对全屏敌人造成100伤害' },
+    { key: 'freeze',   name: '阿虚的吐槽',      color: '#38bdf8', desc: '全屏敌人减速至70%，持续10秒' },
+    { key: 'rewind',   name: '朝比奈的时间回溯', color: '#fbbf24', desc: '将敌人传送回门口' },
+    { key: 'block',    name: '春日的闭锁空间',   color: '#a855f7', desc: '冻结全屏敌人3秒' },
+];
+
+const ITEM_COUNT = 6;
+const items = [];
+let collectedItems = resumeData ? (resumeData.collectedItems || []) : [];
+
+for (let i = 0; i < ITEM_COUNT; i++) {
+    const p = randomSpawn(200, false);
+    const type = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+    items.push({ x: p.x, y: p.y, collected: false, id: i, ...type });
+}
+
+if (resumeData && resumeData.collectedItems) {
+    collectedItems = resumeData.collectedItems;
+}
+
+console.log('[Escape] Items spawned:', items.length, 'at', items.map(i => `(${Math.round(i.x)},${Math.round(i.y)})`).join(', '));
+console.log('[Escape] Gold spawned:', resources.length, 'at', resources.slice(0,5).map(r => `(${Math.round(r.x)},${Math.round(r.y)})`).join(', ') + '...');
+console.log('[Escape] Player at:', Math.round(player.x), Math.round(player.y));
+
 // ── 输入 ──
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
@@ -216,11 +242,17 @@ window.addEventListener('keyup', e => keys[e.key] = false);
 
 function autoPickup() {
     if (gameState !== 'playing') return;
-    // 金币：每帧检测，走近自动捡
     resources.forEach(r => {
         if (!r.collected && Math.hypot(player.x - r.x, player.y - r.y) < 30) {
             r.collected = true; collectedGold++;
             msgEl.textContent = `拾取金币！已收集 ${collectedGold} 金`;
+        }
+    });
+    items.forEach(it => {
+        if (!it.collected && Math.hypot(player.x - it.x, player.y - it.y) < 30) {
+            it.collected = true;
+            collectedItems.push({ key: it.key, name: it.name, color: it.color, desc: it.desc });
+            msgEl.textContent = `拾取道具：${it.name}！`;
         }
     });
 }
@@ -356,6 +388,7 @@ function updateChasers() {
                 computerX: computer.x, computerY: computer.y,
                 computerPicked: computer.picked,
                 collectedGold: collectedGold,
+                collectedItems: collectedItems,
                 resources: resources.map(r => ({ x: r.x, y: r.y, collected: r.collected })),
                 chasers: chasers.map(c => ({ x: c.x, y: c.y })),
             }));
@@ -412,6 +445,25 @@ function draw() {
         ctx.fillText('G', rx - 3, ry + 4);
     });
 
+    // 道具（带脉冲）
+    const pulse = 1 + Math.sin(Date.now() / 300) * 0.3;  // 0.7~1.3 波动
+    items.forEach(it => {
+        if (it.collected) return;
+        const ix = it.x - camX, iy = it.y - camY;
+        if (ix < -30 || ix > CONFIG.VIEW_W + 30 || iy < -30 || iy > CONFIG.VIEW_H + 30) return;
+        const sz = 12 * pulse;
+        ctx.shadowColor = it.color;
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = it.color;
+        ctx.fillRect(ix - sz, iy - sz, sz * 2, sz * 2);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('?', ix, iy + 4);
+        ctx.textAlign = 'start';
+    });
+
     // 电脑
     if (!computer.picked) {
         const cx = computer.x - camX, cy = computer.y - camY;
@@ -450,6 +502,11 @@ function draw() {
     }
     chasers.forEach(c => {
         mctx.fillStyle = c.color; mctx.fillRect(c.x * ms - 1, c.y * ms - 1, 2, 2);
+    });
+    // 道具
+    items.forEach(it => {
+        if (it.collected) return;
+        mctx.fillStyle = it.color; mctx.fillRect(it.x * ms - 1, it.y * ms - 1, 2, 2);
     });
 }
 

@@ -154,8 +154,8 @@ function isPathCell(col, row) {
 }
 
 function isBuildable(col, row) {
-    if (!isWalkable(col, row)) return false;
-    // 门口和电脑格不可部署
+    if (col < 0 || col >= CONFIG.GRID_COLS || row < 0 || row >= CONFIG.GRID_ROWS) return false;
+    if (isPathCell(col, row)) return false;
     if (col === CONFIG.DOOR_COL && row === CONFIG.DOOR_ROW) return false;
     if (col === CONFIG.COMPUTER_COL && row === CONFIG.COMPUTER_ROW) return false;
     return true;
@@ -235,7 +235,7 @@ function pixelToCell(px, py) {
    ============================================================ */
 
 const state = {
-    phase: 'barricade',
+    phase: 'deploy',
     gold:   CONFIG.STARTING_GOLD,
     wave:   0,
     score:  0,
@@ -252,6 +252,7 @@ const state = {
     distanceMap:   null,      // 二维数组 distanceMap[row][col] = 到电脑的步数
     pathCells:     new Set(), // 路径经过的所有格子（用于渲染）
 
+    items:        [],    // 道具列表 [{key, name, color, desc}]
     selectedTower: null,
     waveActive: false,
     waveEnemiesRemaining: [],
@@ -276,14 +277,10 @@ function render() {
     drawBarricades();
     drawDoor();
     drawComputer();
-    if (state.phase === 'barricade') {
-        drawBarricadeHover();
-    } else {
-        drawRangePreview();
-        drawTowers();
-        drawEnemies();
-        drawProjectiles();
-    }
+    drawRangePreview();
+    drawTowers();
+    drawEnemies();
+    drawProjectiles();
 }
 
 function drawGrid() {
@@ -502,11 +499,7 @@ function updateHUD() {
     domGold.textContent  = state.gold;
     domWave.textContent  = state.wave;
     domScore.textContent = state.score;
-    if (state.phase === 'barricade') {
-        document.getElementById('total-waves').textContent = state.barricadesRemaining + '障';
-    } else {
-        document.getElementById('total-waves').textContent = CONFIG.TOTAL_WAVES;
-    }
+    document.getElementById('total-waves').textContent = CONFIG.TOTAL_WAVES;
 }
 
 function setMessage(text) {
@@ -608,6 +601,9 @@ function createEnemy(configIndex, waveNum) {
         color: cfg.color,
         sprite: cfg.sprite,
         flipX: cfg.flipX || false,
+        frozen: 0,
+        slowTimer: 0,
+        _origSpeed: null,
     };
 }
 
@@ -728,6 +724,19 @@ function updateEnemies(dt) {
 
     for (let i = state.enemies.length - 1; i >= 0; i--) {
         const e = state.enemies[i];
+
+        // 道具效果：冻结则跳过
+        if (e.frozen > 0) { e.frozen -= dt; continue; }
+
+        // 减速：独立计时器，到期恢复原速
+        if (e.slowTimer > 0) {
+            e.slowTimer -= dt;
+            if (!e._origSpeed) e._origSpeed = e.speed;
+            e.speed = e._origSpeed * 0.7;
+        } else if (e._origSpeed) {
+            e.speed = e._origSpeed;
+            e._origSpeed = null;
+        }
 
         // 尚未锁定目标格子，或已到达目标 → 选择新目标
         if (e.targetCol == null || (e.x === e.targetX && e.y === e.targetY)) {
@@ -889,6 +898,72 @@ function renderTowerList() {
 }
 
 /* ============================================================
+   SECTION 12b — Item List & Usage
+   ============================================================ */
+
+function renderItemList() {
+    const sidebar = document.querySelector('.sidebar');
+    let itemDiv = document.getElementById('item-list');
+    if (!itemDiv) {
+        itemDiv = document.createElement('div');
+        itemDiv.id = 'item-list';
+        itemDiv.innerHTML = '<h3 style="margin:18px 0 8px">道具</h3><ul id="item-ul" class="tower-list"></ul>';
+        sidebar.appendChild(itemDiv);
+    }
+    const ul = document.getElementById('item-ul');
+    ul.innerHTML = '';
+    if (state.items.length === 0) {
+        ul.innerHTML = '<li style="color:#666;font-size:0.8rem;padding:8px">暂无道具</li>';
+        return;
+    }
+    state.items.forEach((it, idx) => {
+        const li = document.createElement('li');
+        li.className = 'tower-item';
+        li.style.borderLeft = `3px solid ${it.color}`;
+        li.innerHTML = `<div style="font-weight:600;font-size:0.85rem">${it.name}</div>
+            <div style="font-size:0.7rem;color:#999">${it.desc}</div>`;
+        li.addEventListener('click', () => useItem(idx));
+        ul.appendChild(li);
+    });
+}
+
+function useItem(idx) {
+    if (idx >= state.items.length) return;
+    if (state.phase === 'barricade') return;
+    const item = state.items[idx];
+    state.items.splice(idx, 1);
+
+    switch (item.key) {
+        case 'esp':
+            // 古泉的ESP念力弹：全屏敌人伤害100
+            for (const e of state.enemies) e.hp -= 100;
+            setMessage('ESP念力弹！全屏敌人受到100伤害！');
+            break;
+        case 'freeze':
+            // 阿虚的吐槽：全屏敌人减速10秒
+            for (const e of state.enemies) e.slowTimer = 10;
+            setMessage('吐槽发动！全屏敌人减速10秒！');
+            break;
+        case 'rewind':
+            // 朝比奈的时间回溯：所有敌人传送回门口
+            const doorX = CONFIG.DOOR_COL * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+            const doorY = CONFIG.DOOR_ROW * CONFIG.CELL_SIZE + CONFIG.CELL_SIZE / 2;
+            for (const e of state.enemies) {
+                e.x = doorX; e.y = doorY;
+                e.targetCol = null;  // 清除目标，重新寻路
+            }
+            setMessage('时间回溯！所有敌人被传送回门口！');
+            break;
+        case 'block':
+            // 春日的闭锁空间：冻结全屏敌人3秒
+            for (const e of state.enemies) e.frozen = 3;
+            setMessage('闭锁空间！全屏敌人冻结3秒！');
+            break;
+    }
+    renderItemList();
+}
+
+/* ============================================================
    SECTION 6 — Tower Placement
    ============================================================ */
 
@@ -898,7 +973,7 @@ function tryPlaceTower(col, row) {
         return false;
     }
     if (!isBuildable(col, row)) {
-        setMessage('这里不能部署。请选择走道旁的空位。');
+        setMessage('这里不能部署。请选择道路以外的格子。');
         return false;
     }
     if (state.towers.some(t => t.col === col && t.row === row)) {
@@ -943,43 +1018,30 @@ canvas.addEventListener('click', (e) => {
     const { col, row } = pixelToCell(x, y);
     if (col < 0 || col >= CONFIG.GRID_COLS || row < 0 || row >= CONFIG.GRID_ROWS) return;
 
-    if (state.phase === 'barricade') {
-        if (canPlaceBarricade(col, row)) {
-            state.barricades.add(`${col},${row}`);
-            state.barricadesRemaining--;
-            updateHUD();
-            const remain = state.barricadesRemaining;
-            setMessage(remain > 0
-                ? `路障已放置。还剩 ${remain} 个。点击「确认路线」开始部署社员。`
-                : '路障已用完！点击「确认路线」开始部署社员。');
-        } else if (state.barricades.has(`${col},${row}`)) {
-            state.barricades.delete(`${col},${row}`);
-            state.barricadesRemaining++;
-            updateHUD();
-            setMessage(`路障已移除。还剩 ${state.barricadesRemaining} 个。`);
-        } else {
-            setMessage('此处无法放置路障（会堵死通路或已是障碍）。');
-        }
-    } else if (state.phase === 'deploy' || (state.phase === 'battle' && !state.waveActive)) {
+    if (state.phase === 'deploy' || state.phase === 'battle') {
         tryPlaceTower(col, row);
     }
+});
+
+// 右键出售社员（6折回收）
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (state.gameOver) return;
+    const { x, y } = canvasCoords(e);
+    const { col, row } = pixelToCell(x, y);
+    const idx = state.towers.findIndex(t => t.col === col && t.row === row);
+    if (idx < 0) return;
+    const sold = state.towers.splice(idx, 1)[0];
+    const refund = Math.floor(sold.type.cost * 0.6);
+    state.gold += refund;
+    updateHUD();
+    setMessage(`${sold.type.name} 已出售，回收 ${refund}G。`);
 });
 
 btnWave.addEventListener('click', () => {
     if (state.gameOver) return;
 
-    if (state.phase === 'barricade') {
-        if (finalizeBarricades()) {
-            btnWave.textContent = '开始波次';
-        }
-        return;
-    }
-
     if (state.phase === 'deploy') {
-        if (state.waveActive) {
-            setMessage('敌人还在入侵中！');
-            return;
-        }
         if (state.wave >= CONFIG.TOTAL_WAVES) {
             setMessage('所有波次已经结束！');
             return;
@@ -1002,34 +1064,28 @@ btnWave.addEventListener('click', () => {
     }
 });
 
-// 右键移除路障（仅 barricade 阶段）
-canvas.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (state.phase !== 'barricade') return;
-    const { x, y } = canvasCoords(e);
-    const { col, row } = pixelToCell(x, y);
-    if (state.barricades.has(`${col},${row}`)) {
-        state.barricades.delete(`${col},${row}`);
-        state.barricadesRemaining++;
-        updateHUD();
-        setMessage(`路障已移除。还剩 ${state.barricadesRemaining} 个。`);
-    }
-});
 
 /* ============================================================
    SECTION 14 — Game Loop & Init
    ============================================================ */
 
 function initGame() {
-    // 读取逃脱中收集的金币（不删除存档，留给逃脱页面恢复位置）
+    // 读取逃脱中收集的金币和道具
     const resume = JSON.parse(localStorage.getItem('escapeResume') || 'null');
     const bonusGold = resume ? (resume.collectedGold || 0) * 5 : 0;
     state.gold = CONFIG.STARTING_GOLD + bonusGold;
+    state.items = resume && resume.collectedItems ? [...resume.collectedItems] : [];
+
+    // 直接用固定障碍计算路径
+    const dm = computeDistanceMap(state.barricades);
+    state.distanceMap = dm;
+    state.pathCells = extractPathCells(dm);
 
     updateHUD();
     renderTowerList();
-    setMessage(`放置路障（剩 ${state.barricadesRemaining} 个）——点击空格堵路来设计敌人路线。右键可移除。完成后点「确认路线」。`);
-    btnWave.textContent = '确认路线';
+    renderItemList();
+    setMessage('请在道路以外的格子上部署社员，然后点击「开始波次」。');
+    btnWave.textContent = '开始波次';
     lastTime = 0;
     requestAnimationFrame(gameLoop);
 }

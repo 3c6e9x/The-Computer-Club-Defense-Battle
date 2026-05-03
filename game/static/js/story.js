@@ -1,4 +1,7 @@
 const scenes = [
+  { title: '电研社社长', text: '最新型的电脑发售了，我存的备用资金刚好够我买一台', bg: 'images/Electronics Store.png' },
+  { title: '电研社社长', text: '要不是不久前买的新电脑被抢了，我也不会沦落到，要买没什么提升的型号的地步啊', bg: 'images/Electronics Store.png' },
+  { title: '电研社社长', text: '这次一定要保护好电脑，带回活动室，就可以开展研究了', bg: 'images/Electronics Store.png' },
   { title: '旁白', text: '常言道，好奇心害死猫。但如果把这句话套用在凉宫春日身上，死掉的绝对不会是猫，而是被她卷入其中的所有无辜路人。今天，这个违反热力学第二定律的麻烦制造机，又带着她那无处安放的过剩精力一把推开了门。' },
   { title: '凉宫春日', text: '各位！有个特大好消息！你们知道吗，隔壁电脑研究社那帮家伙，居然不知好歹地购入了最新配置的电脑哦！这可是崭新的机器啊！如果我们能"借"过来的话，对我们SOS团走向世界的伟大发展绝对有跨时代的意义！' },
   { title: '阿虚', text: '我就不吐槽你把"抢劫"粉饰成"借用"的强盗逻辑了。话说回来，你这又是从哪只顺风耳那里听来的小道消息？电研社社长要是知道你在打他新老婆的主意，大概会连夜扛着主机逃出千叶县吧。' },
@@ -120,16 +123,23 @@ function stopMusic() {
 
 function showScene(index) {
   if (index < 0 || index >= activeScenes.length) return;
-  
-  // 当title是"旁白"时不显示title，但保留元素以保持对话框大小
-  if (activeScenes[index].title === '旁白') {
+
+  // 场景背景
+  const scene = activeScenes[index];
+  if (scene.bg) {
+    storyVisual.style.background = `linear-gradient(180deg, rgba(16, 18, 27, 0.3) 0%, rgba(7, 9, 15, 0.7) 100%), url("/static/${scene.bg}") center/cover no-repeat`;
+  } else {
+    storyVisual.style.background = '';
+  }
+
+  if (scene.title === '旁白') {
     titleEl.textContent = '';
     titleEl.style.visibility = 'hidden';
   } else {
-    titleEl.textContent = activeScenes[index].title;
+    titleEl.textContent = scene.title;
     titleEl.style.visibility = 'visible';
   }
-  textEl.textContent = activeScenes[index].text;
+  textEl.textContent = scene.text || '';
 }
 
 function advanceScene() {
