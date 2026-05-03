@@ -49,7 +49,7 @@ const CONFIG = {
     WORLD_W: 3200, WORLD_H: 3200,
     VIEW_W: 800, VIEW_H: 560,
     PLAYER_SPEED: 2.5,
-    HQ_X: 1600, HQ_Y: 1600,    // 总部在中心
+    HQ_X: 1600, HQ_Y: 1600,    // 电研社活动室在中心
     CATCH_DIST: 28,
 };
 
@@ -261,11 +261,12 @@ function interact() {
     if (gameState !== 'playing') return;
     if (!player.hasComputer && Math.hypot(player.x - computer.x, player.y - computer.y) < 40) {
         computer.picked = true; player.hasComputer = true;
-        msgEl.textContent = `拾取电脑！已收集 ${collectedGold} 金。快回总部！`;
+        msgEl.textContent = `拾取电脑！已收集 ${collectedGold} 金。快回电研社！`;
     }
     if (player.hasComputer && Math.hypot(player.x - CONFIG.HQ_X, player.y - CONFIG.HQ_Y) < 40) {
-        gameState = 'win'; msgEl.textContent = 'WIN! 成功锁门！';
-        setTimeout(() => { window.location.href = '/victory/'; }, 1500);
+        gameState = 'win'; msgEl.textContent = 'WIN! 成功回到电研社！';
+        localStorage.setItem('escapeWin', 'true');
+        setTimeout(() => { window.location.href = '/story/'; }, 1500);
     }
 }
 
@@ -382,6 +383,7 @@ function updateChasers() {
             gameState = 'lose';
             msgEl.textContent = `被${c.name}抓住了！进入塔防战……`;
             // 保存状态到 localStorage
+            localStorage.setItem('showTransition', 'true');
             localStorage.setItem('escapeResume', JSON.stringify({
                 playerX: player.x, playerY: player.y,
                 hasComputer: player.hasComputer,
@@ -392,7 +394,7 @@ function updateChasers() {
                 resources: resources.map(r => ({ x: r.x, y: r.y, collected: r.collected })),
                 chasers: chasers.map(c => ({ x: c.x, y: c.y })),
             }));
-            setTimeout(() => { window.location.href = '/battle/'; }, 1500);
+            setTimeout(() => { window.location.href = '/story/'; }, 1500);
         }
     });
 }
@@ -426,12 +428,12 @@ function draw() {
         }
     }
 
-    // 总部
+    // 电研社
     const hqx = CONFIG.HQ_X - camX, hqy = CONFIG.HQ_Y - camY;
     if (hqx > -20 && hqx < CONFIG.VIEW_W + 20) {
-        ctx.fillStyle = '#4B0082'; ctx.fillRect(hqx - 15, hqy - 15, 30, 30);
+        ctx.fillStyle = '#4B0082'; ctx.fillRect(hqx - 20, hqy - 15, 40, 30);
         ctx.fillStyle = '#fff'; ctx.font = '10px monospace';
-        ctx.fillText('HQ', hqx - 10, hqy + 4);
+        ctx.fillText('电研社', hqx - 17, hqy + 4);
     }
 
     // 金币资源

@@ -4,14 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>胜利！</title>
+    <title>结局</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <style>
+        html, body { height: 100%; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <div class="page hero" style="text-align:center">
-        <h1 style="color:#4ade80">电脑社守住了！</h1>
-        <p>你成功把电脑带回了活动室，锁好了门。<br>SOS团的进攻被彻底击退了。</p>
-        <a class="btn" href="{% url 'haruhi:index' %}">返回首页</a>
+    <div class="page hero" style="text-align:center" id="end-page">
+        <h1 id="end-title" style="color:#4ade80">电脑社守住了！</h1>
+        <p id="end-text">你成功把电脑带回了电研社，锁好了门。<br>SOS团的进攻被彻底击退了。</p>
+        <p style="color:#888;margin-top:32px">点击任意位置返回首页</p>
     </div>
+    <script>
+        if (localStorage.getItem('towerDefeat') === 'true') {
+            localStorage.removeItem('towerDefeat');
+            document.getElementById('end-title').textContent = '活动室被占领了……';
+            document.getElementById('end-title').style.color = '#ef4444';
+            document.getElementById('end-text').innerHTML = '凉宫春日拿到了电脑。<br>电脑社的抵抗到此为止。';
+        }
+        document.getElementById('end-page').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+    </script>
 </body>
 </html>
