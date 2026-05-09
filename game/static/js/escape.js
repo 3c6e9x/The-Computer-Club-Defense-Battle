@@ -110,8 +110,9 @@ function speedMultiplier(noiseVal) {
 let gameState = 'playing', keys = {};
 let isReturning = false;
 const player = {
-    x: 2800, y: 2800, size: 14, speed: CONFIG.PLAYER_SPEED,
-    color: '#FFD700', hasComputer: false
+    x: 2800, y: 2800, size: 18, speed: CONFIG.PLAYER_SPEED,
+    color: '#FFD700', hasComputer: false,
+    sprite: '/static/images/社长_avatar.png'
 };
 
 const computer = { x: 0, y: 0, picked: false };
@@ -155,23 +156,24 @@ for (let i = 0; i < ATTRACTOR_COUNT; i++) {
 }
 
 // ── 追兵 ──
-function spawnChaser(name, color, speed, personality, nearPlayer) {
+function spawnChaser(name, color, speed, personality, nearPlayer, sprite) {
     const dist = nearPlayer ? 300 + Math.random() * 400 : 600;
     const pos = randomSpawn(dist, false);
     return {
-        name, color, size: 14,
+        name, color, size: 16,
         x: pos.x, y: pos.y,
         baseSpeed: speed, angle: Math.random() * Math.PI * 2,
         personality, timer: 0, stuckTimer: 0,
         attractorIdx: Math.floor(Math.random() * ATTRACTOR_COUNT),
+        sprite: sprite
     };
 }
 
 // 塔防胜利后返回时，追兵生成在离玩家较远的位置（800-1200像素）
 const chasers = [
-    spawnChaser('凉宫春日', '#FF69B4', 3.0, 'hunter',     false),
-    spawnChaser('阿虚',     '#00CED1', 1.6, 'reluctant',  false),
-    spawnChaser('学姐',     '#FF4500', 2.4, 'interceptor', false),
+    spawnChaser('凉宫春日', '#FF69B4', 3.0, 'hunter',     false, '/static/images/suzumiya_avatar.png'),
+    spawnChaser('阿虚',     '#00CED1', 1.6, 'reluctant',  false, '/static/images/阿虚_avatar.png'),
+    spawnChaser('学姐',     '#FF4500', 2.4, 'interceptor', false, '/static/images/1096_1.png'),
 ];
 
 // 塔防胜利后，追兵位置重新生成，不恢复之前的位置
@@ -479,18 +481,39 @@ function draw() {
     // 追兵
     chasers.forEach(c => {
         const sx = c.x - camX, sy = c.y - camY;
-        if (sx < -20 || sx > CONFIG.VIEW_W + 20 || sy < -20 || sy > CONFIG.VIEW_H + 20) return;
-        ctx.fillStyle = c.color; ctx.fillRect(sx - c.size / 2, sy - c.size / 2, c.size, c.size);
+        if (sx < -30 || sx > CONFIG.VIEW_W + 30 || sy < -30 || sy > CONFIG.VIEW_H + 30) return;
+        const cImg = c._img;
+        if (cImg && cImg.complete && cImg.naturalWidth > 0) {
+            const sz = c.size * 2;
+            ctx.save();
+            ctx.beginPath(); ctx.arc(sx, sy, sz / 2, 0, Math.PI * 2); ctx.clip();
+            ctx.drawImage(cImg, sx - sz / 2, sy - sz / 2, sz, sz);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = c.color; ctx.fillRect(sx - c.size / 2, sy - c.size / 2, c.size, c.size);
+        }
         ctx.fillStyle = '#fff'; ctx.font = '10px monospace';
         ctx.fillText(c.name, sx - c.size / 2, sy - c.size / 2 - 2);
     });
 
     // 玩家
     const px = player.x - camX, py = player.y - camY;
-    ctx.fillStyle = player.color; ctx.fillRect(px - player.size / 2, py - player.size / 2, player.size, player.size);
+    const pImg = player._img;
+    if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+        const psz = player.size * 2;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(px, py, psz / 2, 0, Math.PI * 2); ctx.clip();
+        ctx.drawImage(pImg, px - psz / 2, py - psz / 2, psz, psz);
+        ctx.restore();
+    } else {
+        ctx.fillStyle = player.color; ctx.fillRect(px - player.size / 2, py - player.size / 2, player.size, player.size);
+    }
     if (player.hasComputer) {
+        const psz = (pImg && pImg.complete && pImg.naturalWidth > 0) ? player.size * 2 : player.size;
+        ctx.beginPath();
+        ctx.arc(px, py, psz / 2 + 3, 0, Math.PI * 2);
         ctx.strokeStyle = '#4169E1'; ctx.lineWidth = 2;
-        ctx.strokeRect(px - player.size / 2 - 2, py - player.size / 2 - 2, player.size + 4, player.size + 4);
+        ctx.stroke();
     }
 
     // 小地图
@@ -532,4 +555,14 @@ console.log('[NoiseEscape] Building terrain...');
 buildTerrain();
 console.log('[NoiseEscape] World ready:', CONFIG.WORLD_W, 'x', CONFIG.WORLD_H);
 msgEl.textContent = '方向键移动，空格拾取电脑。地形越暗走得越慢！';
+
+// 预加载头像
+const spritesToLoad = [player.sprite, ...chasers.map(c => c.sprite)].filter(Boolean);
+spritesToLoad.forEach(src => {
+    const img = new Image();
+    img.src = src;
+    if (src === player.sprite) player._img = img;
+    chasers.forEach(c => { if (c.sprite === src) c._img = img; });
+});
+
 gameLoop();
